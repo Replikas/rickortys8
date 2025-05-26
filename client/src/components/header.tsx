@@ -15,7 +15,7 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
         <img 
           src={bannerImage} 
           alt="Rick and Morty Season 8" 
-          className="w-full h-56 md:h-72 object-cover object-top opacity-90"
+          className="w-full h-64 md:h-80 object-cover object-center opacity-90"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
         <div className="absolute bottom-4 left-4 md:left-8">
