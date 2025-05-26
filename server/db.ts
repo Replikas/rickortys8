@@ -29,6 +29,26 @@ async function initializeConnection() {
     try {
       await pool.query('SELECT 1');
       console.log('Database connection successful');
+      
+      // Create tables if they don't exist
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS episodes (
+          id SERIAL PRIMARY KEY,
+          code TEXT NOT NULL UNIQUE,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          episode_number INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS streaming_links (
+          id SERIAL PRIMARY KEY,
+          episode_id INTEGER NOT NULL,
+          url TEXT NOT NULL,
+          quality TEXT NOT NULL,
+          source_name TEXT NOT NULL
+        );
+      `);
+      console.log('Database tables created successfully');
       break;
     } catch (error) {
       retries--;
