@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 3.9%; /* #0A0E1A space-dark */
+  --foreground: 0 0% 100%; /* white */
+  --muted: 240 8% 18%; /* #2A2F3E space-lighter */
+  --muted-foreground: 0 0% 65%; /* gray-400 */
+  --popover: 240 8% 15%; /* #1A1F2E space-surface */
+  --popover-foreground: 0 0% 100%;
+  --card: 240 8% 15%; /* #1A1F2E space-surface */
+  --card-foreground: 0 0% 100%;
+  --border: 240 8% 18%; /* #2A2F3E space-lighter */
+  --input: 240 8% 18%; /* #2A2F3E space-lighter */
+  --primary: 186 100% 40%; /* #00B8CC portal-blue */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 8% 15%; /* #1A1F2E space-surface */
+  --secondary-foreground: 0 0% 100%;
+  --accent: 240 8% 18%; /* #2A2F3E space-lighter */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 240 8% 18%;
+  --radius: 0.5rem;
+
+  /* Custom Rick and Morty theme colors */
+  --portal-blue: 186 100% 40%; /* #00B8CC */
+  --rick-green: 80 73% 45%; /* #7DD321 */
+  --morty-orange: 15 100% 60%; /* #FF6B35 */
+  --space-dark: 240 10% 3.9%; /* #0A0E1A */
+  --space-surface: 240 8% 15%; /* #1A1F2E */
+  --space-lighter: 240 8% 18%; /* #2A2F3E */
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 100%;
+  --muted: 240 8% 18%;
+  --muted-foreground: 0 0% 65%;
+  --popover: 240 8% 15%;
+  --popover-foreground: 0 0% 100%;
+  --card: 240 8% 15%;
+  --card-foreground: 0 0% 100%;
+  --border: 240 8% 18%;
+  --input: 240 8% 18%;
+  --primary: 186 100% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 8% 15%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 240 8% 18%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62% 31%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 240 8% 18%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background: hsl(var(--space-dark));
+    color: hsl(0 0% 100%);
+  }
+}
+
+@layer utilities {
+  .portal-blue {
+    color: hsl(var(--portal-blue));
+  }
+  
+  .rick-green {
+    color: hsl(var(--rick-green));
+  }
+  
+  .morty-orange {
+    color: hsl(var(--morty-orange));
+  }
+  
+  .bg-portal-blue {
+    background-color: hsl(var(--portal-blue));
+  }
+  
+  .bg-rick-green {
+    background-color: hsl(var(--rick-green));
+  }
+  
+  .bg-morty-orange {
+    background-color: hsl(var(--morty-orange));
+  }
+  
+  .bg-space-dark {
+    background-color: hsl(var(--space-dark));
+  }
+  
+  .bg-space-surface {
+    background-color: hsl(var(--space-surface));
+  }
+  
+  .bg-space-lighter {
+    background-color: hsl(var(--space-lighter));
+  }
+  
+  .border-portal-blue {
+    border-color: hsl(var(--portal-blue));
+  }
+  
+  .border-space-lighter {
+    border-color: hsl(var(--space-lighter));
+  }
+  
+  .hover\:border-portal-blue:hover {
+    border-color: hsl(var(--portal-blue));
+  }
+  
+  .text-portal-blue {
+    color: hsl(var(--portal-blue));
+  }
+  
+  .text-rick-green {
+    color: hsl(var(--rick-green));
+  }
+  
+  .text-morty-orange {
+    color: hsl(var(--morty-orange));
+  }
+  
+  .hover\:text-portal-blue:hover {
+    color: hsl(var(--portal-blue));
+  }
+  
+  .from-portal-blue {
+    --tw-gradient-from: hsl(var(--portal-blue));
+  }
+  
+  .to-rick-green {
+    --tw-gradient-to: hsl(var(--rick-green));
+  }
+  
+  .from-morty-orange {
+    --tw-gradient-from: hsl(var(--morty-orange));
+  }
+  
+  .to-morty-orange {
+    --tw-gradient-to: hsl(var(--morty-orange));
+  }
+  
+  .hover\:from-rick-green:hover {
+    --tw-gradient-from: hsl(var(--rick-green));
+  }
+  
+  .hover\:to-morty-orange:hover {
+    --tw-gradient-to: hsl(var(--morty-orange));
+  }
+  
+  .shadow-portal-blue\/20 {
+    --tw-shadow-color: hsl(var(--portal-blue) / 0.2);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+  
+  .hover\:shadow-portal-blue\/20:hover {
+    --tw-shadow-color: hsl(var(--portal-blue) / 0.2);
+    --tw-shadow: var(--tw-shadow-colored);
+  }
+}
