@@ -28,6 +28,15 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
         </div>
       </div>
 
+      {/* Floating Message */}
+      <div className="relative -mt-8 z-30 mx-4 md:mx-8">
+        <div className="bg-gradient-to-r from-portal-blue/90 to-rick-green/90 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20 shadow-lg">
+          <p className="text-white text-sm md:text-base font-medium text-center">
+            📺 Links will be uploaded after the episode aired on Adult Swim every Sunday
+          </p>
+        </div>
+      </div>
+
       {/* Navigation Header */}
       <header className="bg-space-surface border-b border-space-lighter sticky top-0 z-40 backdrop-blur-sm bg-opacity-95">
         <div className="container mx-auto px-4 py-4">
