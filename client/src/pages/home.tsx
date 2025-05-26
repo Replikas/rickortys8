@@ -113,7 +113,7 @@ export default function Home() {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)}
         episodes={episodes}
-        onAddLink={addLink}
+        onAddLink={handleAddLink}
       />
     </div>
   );
