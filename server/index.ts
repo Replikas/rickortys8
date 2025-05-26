@@ -56,8 +56,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use Railway's PORT or fallback to 5000
-  const port = process.env.PORT || 5000;
+  // Use Glitch's PORT or fallback to 3000
+  const port = process.env.PORT || 3000;
   server.listen({
     port,
     host: "0.0.0.0",
