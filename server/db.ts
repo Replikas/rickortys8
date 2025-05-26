@@ -11,5 +11,36 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Add connection retry logic
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 5000; // 5 seconds
+
+function createPool(): Pool {
+  return new Pool({ connectionString: process.env.DATABASE_URL });
+}
+
+export const pool = createPool();
 export const db = drizzle({ client: pool, schema });
+
+// Initialize connection with retry logic
+async function initializeConnection() {
+  let retries = MAX_RETRIES;
+  while (retries > 0) {
+    try {
+      await pool.query('SELECT 1');
+      console.log('Database connection successful');
+      break;
+    } catch (error) {
+      retries--;
+      if (retries === 0) {
+        console.error('Failed to connect to database after multiple attempts');
+        throw error;
+      }
+      console.log(`Database connection failed. Retrying in ${RETRY_DELAY}ms... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    }
+  }
+}
+
+// Start connection initialization
+initializeConnection().catch(console.error);
