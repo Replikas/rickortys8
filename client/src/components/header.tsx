@@ -19,7 +19,7 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
         <div className="absolute bottom-4 left-4 md:left-8">
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl" style={{textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.8)'}}>
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl" style={{fontFamily: 'Creepster, cursive', textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.8)'}}>
             Rick & Morty
           </h1>
           <p className="text-lg md:text-xl text-yellow-400 font-bold drop-shadow-2xl" style={{textShadow: '2px 2px 6px rgba(0,0,0,0.9), 0 0 15px rgba(0,0,0,0.8)'}}>
