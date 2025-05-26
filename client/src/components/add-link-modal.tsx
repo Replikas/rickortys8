@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,68 +27,66 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import type { EpisodeWithLinks, InsertStreamingLink } from "@shared/schema";
+import type { EpisodeWithLinks, StreamingLink } from "@/types/episode";
 
 const formSchema = z.object({
-  episodeId: z.string().transform(Number),
+  episodeId: z.string().min(1, "Please select an episode"),
   url: z.string().url("Please enter a valid URL"),
   quality: z.enum(["4K", "1080p", "720p", "480p"]),
-  sourceName: z.string().min(1, "Source name is required"),
+  platform: z.string().min(1, "Platform name is required"),
 });
+
+type FormData = z.infer<typeof formSchema>;
 
 interface AddLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
   episodes: EpisodeWithLinks[];
+  onAddLink: (link: Omit<StreamingLink, 'id'>) => void;
 }
 
-export default function AddLinkModal({ isOpen, onClose, episodes }: AddLinkModalProps) {
+export default function AddLinkModal({ isOpen, onClose, episodes, onAddLink }: AddLinkModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       episodeId: "",
       url: "",
       quality: "1080p",
-      sourceName: "",
+      platform: "",
     },
   });
 
-  const addLinkMutation = useMutation({
-    mutationFn: async (data: InsertStreamingLink) => {
-      const response = await apiRequest("POST", "/api/streaming-links", data);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+  const onSubmit = async (values: FormData) => {
+    setIsSubmitting(true);
+    try {
+      const newLink: Omit<StreamingLink, 'id'> = {
+        episodeId: parseInt(values.episodeId),
+        platform: values.platform,
+        url: values.url,
+        quality: values.quality,
+      };
+      
+      onAddLink(newLink);
+      
       toast({
         title: "Success!",
         description: "Streaming link added successfully!",
       });
+      
       form.reset();
       onClose();
-    },
-    onError: (error: any) => {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to add streaming link",
+        description: "Failed to add streaming link",
         variant: "destructive",
       });
-    },
-  });
-
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const data: InsertStreamingLink = {
-      episodeId: values.episodeId,
-      url: values.url,
-      quality: values.quality,
-      sourceName: values.sourceName,
-    };
-    addLinkMutation.mutate(data);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -157,7 +154,7 @@ export default function AddLinkModal({ isOpen, onClose, episodes }: AddLinkModal
                   <FormLabel className="text-gray-300">Streaming URL</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="https://example.com/stream/episode"
+                      placeholder="https://drive.google.com/file/d/..."
                       className="bg-space-lighter border-gray-600 text-white placeholder-gray-400"
                       {...field}
                     />
@@ -192,16 +189,16 @@ export default function AddLinkModal({ isOpen, onClose, episodes }: AddLinkModal
               )}
             />
 
-            {/* Source Name */}
+            {/* Platform Name */}
             <FormField
               control={form.control}
-              name="sourceName"
+              name="platform"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-300">Source Name</FormLabel>
+                  <FormLabel className="text-gray-300">Platform Name</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., StreamSite, VideoHub"
+                      placeholder="e.g., Google Drive, Mega, Dropbox"
                       className="bg-space-lighter border-gray-600 text-white placeholder-gray-400"
                       {...field}
                     />
@@ -223,10 +220,10 @@ export default function AddLinkModal({ isOpen, onClose, episodes }: AddLinkModal
               </Button>
               <Button
                 type="submit"
-                disabled={addLinkMutation.isPending}
+                disabled={isSubmitting}
                 className="flex-1 bg-gradient-to-r from-portal-blue to-rick-green hover:opacity-90 text-white"
               >
-                {addLinkMutation.isPending ? "Adding..." : "Add Link"}
+                {isSubmitting ? "Adding..." : "Add Link"}
               </Button>
             </div>
           </form>

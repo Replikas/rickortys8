@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/header";
 import StatsBar from "@/components/stats-bar";
 import EpisodeCard from "@/components/episode-card";
@@ -6,24 +6,42 @@ import AddLinkModal from "@/components/add-link-modal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { episodesData } from "@/data/episodes";
-import type { EpisodeWithLinks } from "@/types/episode";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import type { EpisodeWithLinks, StreamingLink } from "@/types/episode";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [visibleEpisodes, setVisibleEpisodes] = useState(6);
+  
+  // Store additional links in local storage
+  const [additionalLinks, setAdditionalLinks] = useLocalStorage<StreamingLink[]>("episode-links", []);
 
-  // Filter episodes based on search query
+  // Combine original episodes with additional links from local storage
   const episodes = useMemo(() => {
-    if (!searchQuery) return episodesData;
+    const episodesWithAdditionalLinks = episodesData.map(episode => ({
+      ...episode,
+      links: [
+        ...episode.links,
+        ...additionalLinks.filter(link => link.episodeId === episode.id)
+      ]
+    }));
+
+    if (!searchQuery) return episodesWithAdditionalLinks;
     
     const query = searchQuery.toLowerCase();
-    return episodesData.filter(episode => 
+    return episodesWithAdditionalLinks.filter(episode => 
       episode.title.toLowerCase().includes(query) ||
       episode.description.toLowerCase().includes(query) ||
       episode.code.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [searchQuery, additionalLinks]);
+
+  // Function to add a new link
+  const addLink = (newLink: Omit<StreamingLink, 'id'>) => {
+    const id = Math.max(0, ...additionalLinks.map(l => l.id)) + 1;
+    setAdditionalLinks(prev => [...prev, { ...newLink, id }]);
+  };
 
   const displayedEpisodes = episodes.slice(0, visibleEpisodes);
   const hasMoreEpisodes = episodes.length > visibleEpisodes;
@@ -100,6 +118,7 @@ export default function Home() {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)}
         episodes={episodes}
+        onAddLink={addLink}
       />
     </div>
   );
