@@ -11,6 +11,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const episodes = await storage.getEpisodesWithLinks();
       res.json(episodes);
     } catch (error) {
+      console.error("Error fetching episodes:", error);
       res.status(500).json({ message: "Failed to fetch episodes" });
     }
   });
@@ -53,6 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid episode data", errors: error.errors });
       }
+      console.error("Error creating episode:", error);
       res.status(500).json({ message: "Failed to create episode" });
     }
   });
@@ -93,6 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastUpdated: "2 hours ago" // This could be dynamic based on actual data
       });
     } catch (error) {
+      console.error("Error fetching stats:", error);
       res.status(500).json({ message: "Failed to fetch stats" });
     }
   });
