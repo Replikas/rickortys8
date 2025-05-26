@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { setupPingService } from "./ping";
 
 const app = express();
 app.use(express.json());
@@ -54,9 +55,11 @@ app.use((req, res, next) => {
     await setupVite(app, server);
   } else {
     serveStatic(app);
+    // Start ping service in production
+    setupPingService();
   }
 
-  // Use Glitch's PORT or fallback to 3000
+  // Use Render's PORT or fallback to 3000
   const port = process.env.PORT || 3000;
   server.listen({
     port,
