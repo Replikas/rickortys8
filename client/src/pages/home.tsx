@@ -1,54 +1,49 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/header";
 import StatsBar from "@/components/stats-bar";
 import EpisodeCard from "@/components/episode-card";
 import AddLinkModal from "@/components/add-link-modal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { episodesData } from "@/data/episodes";
-import { useLocalStorage } from "@/hooks/use-local-storage";
-import type { EpisodeWithLinks, StreamingLink } from "@/types/episode";
+import type { EpisodeWithLinks } from "@/types/episode";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [visibleEpisodes, setVisibleEpisodes] = useState(6);
-  
-  // Store additional links in local storage
-  const [additionalLinks, setAdditionalLinks] = useLocalStorage<StreamingLink[]>("episode-links", []);
 
-  // Combine original episodes with additional links from local storage
-  const episodes = useMemo(() => {
-    const episodesWithAdditionalLinks = episodesData.map(episode => ({
-      ...episode,
-      links: [
-        ...episode.links,
-        ...additionalLinks.filter(link => link.episodeId === episode.id)
-      ]
-    }));
+  // Fetch episodes with links from the database
+  const { data: episodes = [], isLoading, refetch } = useQuery({
+    queryKey: ["/api/episodes"],
+    queryFn: async () => {
+      const response = await fetch("/api/episodes");
+      if (!response.ok) throw new Error("Failed to fetch episodes");
+      return response.json() as EpisodeWithLinks[];
+    },
+  });
 
-    if (!searchQuery) return episodesWithAdditionalLinks;
+  // Filter episodes based on search query
+  const filteredEpisodes = useMemo(() => {
+    if (!searchQuery) return episodes;
     
     const query = searchQuery.toLowerCase();
-    return episodesWithAdditionalLinks.filter(episode => 
+    return episodes.filter(episode => 
       episode.title.toLowerCase().includes(query) ||
       episode.description.toLowerCase().includes(query) ||
       episode.code.toLowerCase().includes(query)
     );
-  }, [searchQuery, additionalLinks]);
+  }, [searchQuery, episodes]);
 
-  // Function to add a new link
-  const addLink = (newLink: Omit<StreamingLink, 'id'>) => {
-    const id = Math.max(0, ...additionalLinks.map(l => l.id)) + 1;
-    setAdditionalLinks(prev => [...prev, { ...newLink, id }]);
-  };
-
-  const displayedEpisodes = episodes.slice(0, visibleEpisodes);
-  const hasMoreEpisodes = episodes.length > visibleEpisodes;
-  const isLoading = false; // No loading since data is local
+  const displayedEpisodes = filteredEpisodes.slice(0, visibleEpisodes);
+  const hasMoreEpisodes = filteredEpisodes.length > visibleEpisodes;
 
   const handleLoadMore = () => {
     setVisibleEpisodes(prev => prev + 6);
+  };
+
+  const handleAddLink = () => {
+    refetch(); // Refresh the episodes list after adding a link
   };
 
   return (

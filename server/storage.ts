@@ -1,4 +1,6 @@
 import { episodes, streamingLinks, type Episode, type InsertEpisode, type StreamingLink, type InsertStreamingLink, type EpisodeWithLinks } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Episodes
@@ -156,4 +158,62 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getAllEpisodes(): Promise<Episode[]> {
+    return await db.select().from(episodes);
+  }
+
+  async getEpisode(id: number): Promise<Episode | undefined> {
+    const [episode] = await db.select().from(episodes).where(eq(episodes.id, id));
+    return episode || undefined;
+  }
+
+  async createEpisode(insertEpisode: InsertEpisode): Promise<Episode> {
+    const [episode] = await db
+      .insert(episodes)
+      .values(insertEpisode)
+      .returning();
+    return episode;
+  }
+
+  async getStreamingLinksForEpisode(episodeId: number): Promise<StreamingLink[]> {
+    return await db.select().from(streamingLinks).where(eq(streamingLinks.episodeId, episodeId));
+  }
+
+  async createStreamingLink(link: InsertStreamingLink): Promise<StreamingLink> {
+    const [streamingLink] = await db
+      .insert(streamingLinks)
+      .values(link)
+      .returning();
+    return streamingLink;
+  }
+
+  async getEpisodesWithLinks(): Promise<EpisodeWithLinks[]> {
+    const allEpisodes = await this.getAllEpisodes();
+    const episodesWithLinks: EpisodeWithLinks[] = [];
+
+    for (const episode of allEpisodes) {
+      const links = await this.getStreamingLinksForEpisode(episode.id);
+      episodesWithLinks.push({
+        ...episode,
+        links
+      });
+    }
+
+    return episodesWithLinks;
+  }
+
+  async searchEpisodes(query: string): Promise<EpisodeWithLinks[]> {
+    // For now, get all episodes and filter - can be optimized later with SQL search
+    const allEpisodes = await this.getEpisodesWithLinks();
+    const searchQuery = query.toLowerCase();
+    
+    return allEpisodes.filter(episode => 
+      episode.title.toLowerCase().includes(searchQuery) ||
+      episode.description.toLowerCase().includes(searchQuery) ||
+      episode.code.toLowerCase().includes(searchQuery)
+    );
+  }
+}
+
+export const storage = new DatabaseStorage();
