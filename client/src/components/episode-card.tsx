@@ -1,7 +1,7 @@
 import { ExternalLink, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { EpisodeWithLinks } from "@shared/schema";
+import type { EpisodeWithLinks } from "@/types/episode";
 
 interface EpisodeCardProps {
   episode: EpisodeWithLinks;
@@ -84,10 +84,10 @@ export default function EpisodeCard({ episode }: EpisodeCardProps) {
                   {link.quality}
                 </span>
                 <span className="text-xs text-gray-400">
-                  {link.sourceName}
+                  {link.platform}
                 </span>
                 <button
-                  onClick={() => handleStreamClick(link.url, link.sourceName)}
+                  onClick={() => handleStreamClick(link.url, link.platform)}
                   className="text-portal-blue hover:text-white transition-colors"
                 >
                   <ExternalLink className="text-xs h-3 w-3" />

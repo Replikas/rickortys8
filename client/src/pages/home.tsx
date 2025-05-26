@@ -1,32 +1,33 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import Header from "@/components/header";
 import StatsBar from "@/components/stats-bar";
 import EpisodeCard from "@/components/episode-card";
 import AddLinkModal from "@/components/add-link-modal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import type { EpisodeWithLinks } from "@shared/schema";
+import { episodesData } from "@/data/episodes";
+import type { EpisodeWithLinks } from "@/types/episode";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [visibleEpisodes, setVisibleEpisodes] = useState(6);
 
-  const { data: episodes = [], isLoading } = useQuery<EpisodeWithLinks[]>({
-    queryKey: searchQuery ? ["/api/episodes/search", searchQuery] : ["/api/episodes"],
-    queryFn: async () => {
-      const url = searchQuery 
-        ? `/api/episodes/search?q=${encodeURIComponent(searchQuery)}`
-        : "/api/episodes";
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch episodes");
-      return response.json();
-    },
-  });
+  // Filter episodes based on search query
+  const episodes = useMemo(() => {
+    if (!searchQuery) return episodesData;
+    
+    const query = searchQuery.toLowerCase();
+    return episodesData.filter(episode => 
+      episode.title.toLowerCase().includes(query) ||
+      episode.description.toLowerCase().includes(query) ||
+      episode.code.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
 
   const displayedEpisodes = episodes.slice(0, visibleEpisodes);
   const hasMoreEpisodes = episodes.length > visibleEpisodes;
+  const isLoading = false; // No loading since data is local
 
   const handleLoadMore = () => {
     setVisibleEpisodes(prev => prev + 6);
