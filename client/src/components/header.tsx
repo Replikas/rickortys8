@@ -29,7 +29,7 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
       </div>
 
       {/* Floating Message */}
-      <div className="relative -mt-8 z-30 mx-4 md:mx-8 animate-in slide-in-from-top-4 fade-in duration-700">
+      <div className="relative mt-4 z-30 mx-4 md:mx-8 animate-in slide-in-from-top-4 fade-in duration-700">
         <div className="bg-gradient-to-r from-portal-blue/90 to-rick-green/90 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20 shadow-lg animate-pulse">
           <p className="text-white text-sm md:text-base font-medium text-center animate-in fade-in duration-1000 delay-300">
             <span className="inline-block animate-bounce mr-2">📺</span>
