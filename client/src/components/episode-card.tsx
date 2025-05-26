@@ -10,12 +10,25 @@ interface EpisodeCardProps {
 export default function EpisodeCard({ episode }: EpisodeCardProps) {
   const { toast } = useToast();
 
+  const convertToStreamableUrl = (url: string) => {
+    // Convert Google Drive share links to direct streaming links
+    if (url.includes('drive.google.com')) {
+      const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileIdMatch) {
+        const fileId = fileIdMatch[1];
+        return `https://drive.google.com/file/d/${fileId}/preview`;
+      }
+    }
+    return url;
+  };
+
   const handleStreamClick = (url: string, sourceName: string) => {
     try {
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const streamableUrl = convertToStreamableUrl(url);
+      window.open(streamableUrl, '_blank', 'noopener,noreferrer');
       toast({
         title: "Opening stream",
-        description: `Opening ${sourceName} in new tab...`,
+        description: `Streaming ${sourceName} in new tab...`,
       });
     } catch (error) {
       toast({
