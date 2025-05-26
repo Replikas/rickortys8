@@ -98,19 +98,9 @@ export default function AddLinkModal({ isOpen, onClose, episodes, onAddLink }: A
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="bg-space-surface border-space-lighter max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-white">
-              Add Streaming Link
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="text-gray-400 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-bold text-white">
+            Add Streaming Link
+          </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
