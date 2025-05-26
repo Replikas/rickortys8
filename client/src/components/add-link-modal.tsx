@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { EpisodeWithLinks, StreamingLink } from "@/types/episode";
+import type { EpisodeWithLinks, StreamingLink } from "@shared/schema";
 
 const formSchema = z.object({
   episodeId: z.string().min(1, "Please select an episode"),
@@ -42,7 +42,7 @@ interface AddLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
   episodes: EpisodeWithLinks[];
-  onAddLink: (link: Omit<StreamingLink, 'id'>) => void;
+  onAddLink: () => void;
 }
 
 export default function AddLinkModal({ isOpen, onClose, episodes, onAddLink }: AddLinkModalProps) {
@@ -62,14 +62,24 @@ export default function AddLinkModal({ isOpen, onClose, episodes, onAddLink }: A
   const onSubmit = async (values: FormData) => {
     setIsSubmitting(true);
     try {
-      const newLink: Omit<StreamingLink, 'id'> = {
-        episodeId: parseInt(values.episodeId),
-        platform: values.platform,
-        url: values.url,
-        quality: values.quality,
-      };
+      const response = await fetch("/api/streaming-links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          episodeId: parseInt(values.episodeId),
+          sourceName: values.platform,
+          url: values.url,
+          quality: values.quality,
+        }),
+      });
       
-      onAddLink(newLink);
+      if (!response.ok) {
+        throw new Error("Failed to add streaming link");
+      }
+      
+      onAddLink();
       
       toast({
         title: "Success!",

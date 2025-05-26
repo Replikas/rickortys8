@@ -4,13 +4,16 @@ import Header from "@/components/header";
 import StatsBar from "@/components/stats-bar";
 import EpisodeCard from "@/components/episode-card";
 import AddLinkModal from "@/components/add-link-modal";
+import AddEpisodeModal from "@/components/add-episode-modal";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import type { EpisodeWithLinks } from "@/types/episode";
+import { Plus, Tv, Link } from "lucide-react";
+import type { EpisodeWithLinks } from "@shared/schema";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
+  const [isAddEpisodeModalOpen, setIsAddEpisodeModalOpen] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
   const [visibleEpisodes, setVisibleEpisodes] = useState(6);
 
   // Fetch episodes with links from the database
@@ -97,21 +100,53 @@ export default function Home() {
         )}
       </main>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button with Menu */}
       <div className="fixed bottom-6 right-6 z-50">
+        {showAddMenu && (
+          <div className="absolute bottom-16 right-0 space-y-3 mb-2">
+            <Button
+              onClick={() => {
+                setIsAddEpisodeModalOpen(true);
+                setShowAddMenu(false);
+              }}
+              className="bg-portal-blue hover:bg-portal-blue/80 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
+            >
+              <Tv className="w-4 h-4" />
+              <span className="whitespace-nowrap">Add Episode</span>
+            </Button>
+            <Button
+              onClick={() => {
+                setIsAddLinkModalOpen(true);
+                setShowAddMenu(false);
+              }}
+              className="bg-rick-green hover:bg-rick-green/80 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
+              disabled={episodes.length === 0}
+            >
+              <Link className="w-4 h-4" />
+              <span className="whitespace-nowrap">Add Link</span>
+            </Button>
+          </div>
+        )}
+        
         <Button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={() => setShowAddMenu(!showAddMenu)}
           className="bg-gradient-to-r from-morty-orange to-rick-green hover:from-rick-green hover:to-morty-orange text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
           size="icon"
         >
-          <Plus className="text-xl group-hover:rotate-90 transition-transform duration-300" />
+          <Plus className={`text-xl transition-transform duration-300 ${showAddMenu ? 'rotate-45' : ''}`} />
         </Button>
       </div>
 
+      {/* Add Episode Modal */}
+      <AddEpisodeModal 
+        isOpen={isAddEpisodeModalOpen} 
+        onClose={() => setIsAddEpisodeModalOpen(false)}
+      />
+
       {/* Add Link Modal */}
       <AddLinkModal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)}
+        isOpen={isAddLinkModalOpen} 
+        onClose={() => setIsAddLinkModalOpen(false)}
         episodes={episodes}
         onAddLink={handleAddLink}
       />
