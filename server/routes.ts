@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertStreamingLinkSchema } from "@shared/schema";
+import { insertStreamingLinkSchema, insertEpisodeSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -40,6 +40,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...episode, links });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch episode" });
+    }
+  });
+
+  // Create new episode
+  app.post("/api/episodes", async (req, res) => {
+    try {
+      const episodeData = insertEpisodeSchema.parse(req.body);
+      const episode = await storage.createEpisode(episodeData);
+      res.status(201).json(episode);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid episode data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create episode" });
     }
   });
 
