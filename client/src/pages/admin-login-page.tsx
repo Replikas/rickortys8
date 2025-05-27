@@ -51,11 +51,10 @@ export default function AdminLoginPage() {
           />
           <Button 
             onClick={() => loginMutation.mutate(password)} 
-            disabled={loginMutation.isLoading || password.length === 0}
             variant="outline"
             className="bg-space-lighter hover:bg-space-lighter/80 border-space-lighter text-white text-base w-full"
           >
-            {loginMutation.isLoading ? 'Logging in...' : 'Login'}
+            Login
           </Button>
         </div>
       </div>
