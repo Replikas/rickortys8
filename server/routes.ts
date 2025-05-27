@@ -1,11 +1,11 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertStreamingLinkSchema, insertEpisodeSchema } from "@shared/schema";
+import { storage } from "./index"; // Import storage from index.ts
+import { insertStreamingLinkSchema, insertEpisodeSchema, type InsertEpisode } from "@shared/schema";
 import { z } from "zod";
 import type { Session } from "express-session";
 import { Router } from "express";
-import { pool } from "./db"; // Assuming pool is exported from db.ts
+// import { pool } from "./db"; // Removed - pool is now in index.ts and not needed here
 import { log } from "./vite";
 
 // Extend Express Request type to include session
@@ -58,21 +58,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new episode
-  app.post("/api/episodes", async (req, res) => {
-    const { code, title, description, airDate, duration } = req.body;
-
-    // Validate incoming data
-    const parseResult = insertEpisodeSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({ message: 'Invalid episode data', errors: parseResult.error.flatten().fieldErrors });
+  app.post("/api/episodes", async (req: RequestWithSession, res) => {
+    const validation = insertEpisodeSchema.safeParse(req.body);
+    if (!validation.success) {
+      log("Episode validation failed:", JSON.stringify(validation.error.errors));
+      return res.status(400).json({ message: "Invalid episode data" });
     }
 
+    const episode: InsertEpisode = validation.data; // Add type annotation here
+
     try {
-      const newEpisode = storage.createEpisode(parseResult.data);
-      res.status(201).json(newEpisode);
+      const createdEpisode = await storage.createEpisode(episode);
+      res.status(201).json(createdEpisode);
     } catch (error) {
-      console.error('Error creating episode:', error);
-      res.status(500).json({ message: 'Failed to create episode' });
+      log("Error creating episode:", String(error));
+      res.status(500).json({ message: "Error creating episode" });
     }
   });
 

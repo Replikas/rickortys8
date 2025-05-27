@@ -1,5 +1,5 @@
 import { episodes, streamingLinks, type Episode, type InsertEpisode, type StreamingLink, type InsertStreamingLink, type EpisodeWithLinks } from "@shared/schema";
-import { db } from "./db";
+import { db } from "./index";
 import { eq } from "drizzle-orm";
 
 export interface IStorage {

@@ -14,15 +14,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
+import { BiLinkExternal } from "react-icons/bi";
+import { FiTrash2 } from "react-icons/fi";
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { Separator } from "./ui/separator";
 
 interface EpisodeCardProps {
   episode: EpisodeWithLinks;
   isAdmin?: boolean;
+  onDelete?: (episodeId: number) => void;
+  onDeleteTemporary?: (episodeId: number) => void;
+  onEpisodeDeleted?: () => void;
 }
 
-export default function EpisodeCard({ episode, isAdmin = false }: EpisodeCardProps) {
+export default function EpisodeCard({ episode, isAdmin = false, onDelete, onDeleteTemporary, onEpisodeDeleted }: EpisodeCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingTemporary, setIsDeletingTemporary] = useState(false);
 
   const deleteEpisodeMutation = useMutation({
     mutationFn: async () => {
@@ -30,20 +42,23 @@ export default function EpisodeCard({ episode, isAdmin = false }: EpisodeCardPro
         method: "DELETE",
       });
       if (!response.ok) {
-        throw new Error("Failed to delete episode");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete episode");
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
+      queryClient.invalidateQueries({ queryKey: ["episodes"] });
+      queryClient.invalidateQueries({ queryKey: ["episodes", episode.id] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
       toast({
         title: "Success!",
         description: "Episode deleted successfully!",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete episode",
+        description: error.message || "Failed to delete episode.",
         variant: "destructive",
       });
     },
@@ -78,121 +93,130 @@ export default function EpisodeCard({ episode, isAdmin = false }: EpisodeCardPro
     }
   };
 
+  const handleTemporaryDelete = async () => {
+    if (window.confirm(`Are you sure you want to DELETE episode "${episode.title}"?\n\nWARNING: This uses a temporary, insecure endpoint and should be removed from code later.`)) {
+      setIsDeletingTemporary(true);
+      try {
+        const response = await fetch(`/api/temp/delete-episode/${episode.id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          console.log(`Episode ${episode.id} deleted successfully via temporary endpoint.`);
+          toast({
+            title: "Success!",
+            description: "Episode deleted successfully (temporary)",
+          });
+          onDeleteTemporary?.(episode.id);
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to delete episode via temporary endpoint:', errorData.message);
+          toast({
+            title: "Error",
+            description: errorData.message || 'Failed to delete episode (temporary).',
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error deleting episode via temporary endpoint:', error);
+        toast({
+          title: "Error",
+          description: 'An error occurred while deleting the episode (temporary).',
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeletingTemporary(false);
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isAdmin) return;
+
+    if (window.confirm(`Are you sure you want to delete episode "${episode.title}"?`)) {
+      setIsDeleting(true);
+      try {
+        const response = await fetch(`/api/episodes/${episode.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('Failed to delete episode:', error.message);
+          alert(`Failed to delete episode: ${error.message}`);
+        } else {
+          console.log('Episode deleted successfully');
+          alert('Episode deleted successfully!');
+          deleteEpisodeMutation.mutate();
+          if (onEpisodeDeleted) {
+            onEpisodeDeleted();
+          }
+        }
+      } catch (error) {
+        console.error('Error deleting episode:', error);
+        alert('An error occurred while trying to delete the episode.');
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
+
   const displayedLinks = episode.links.slice(0, 2);
   const hasMoreLinks = episode.links.length > 2;
 
   return (
-    <div className="bg-space-surface rounded-xl border border-space-lighter hover:border-portal-blue transition-all duration-300 hover:shadow-lg hover:shadow-portal-blue/20 group">
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
+    <Card className="bg-space-surface text-white border-space-lighter overflow-hidden">
+      <CardHeader>
+        <div className="flex justify-between items-start">
           <div>
-            <div className="text-xs font-mono text-portal-blue mb-1">
-              {episode.code}
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-portal-blue transition-colors">
-              {episode.title}
-            </h3>
+            <CardTitle className="text-xl font-bold text-rick-green">{episode.code}</CardTitle>
+            <CardDescription className="text-gray-400">{episode.title}</CardDescription>
           </div>
-          <div className="flex items-center space-x-2">
-            {isAdmin && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="bg-space-surface border-space-lighter">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white">Delete Episode</AlertDialogTitle>
-                    <AlertDialogDescription className="text-gray-400">
-                      Are you sure you want to delete this episode? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-space-lighter text-white hover:bg-space-dark">
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteEpisodeMutation.mutate()}
-                      className="bg-red-500 text-white hover:bg-red-600"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            <div className="flex items-center space-x-1">
-              <LinkIcon className="text-rick-green text-sm h-4 w-4" />
-              <span className="text-xs text-rick-green font-medium">
-                {episode.links.length} link{episode.links.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <p className="text-sm text-gray-400 mb-4 line-clamp-3">
-          {episode.description}
-        </p>
-        
-        {/* Quick Links */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-400">Quality</span>
-            <span className="text-gray-400">Source</span>
-            <span className="text-gray-400">Action</span>
-          </div>
-          
-          {displayedLinks.map((link) => (
-            <div
-              key={link.id}
-              className="flex items-center justify-between py-2 px-3 bg-space-lighter rounded-lg hover:bg-space-dark transition-colors"
+          {isAdmin && (
+            <Button 
+              variant="destructive" 
+              size="icon" 
+              onClick={handleDelete}
+              className="flex-shrink-0"
             >
-              <span className="text-xs font-medium text-white">
-                {link.quality}
-              </span>
-              <span className="text-xs text-gray-400">
-                {link.sourceName}
-              </span>
-              <button
-                onClick={() => handleStreamClick(link.url, link.sourceName)}
-                className="text-portal-blue hover:text-white transition-colors"
-              >
-                <ExternalLink className="text-xs h-3 w-3" />
-              </button>
-            </div>
-          ))}
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-        
-        <Button
-          className="w-full bg-gradient-to-r from-portal-blue to-rick-green text-white py-2 px-4 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-          onClick={() => {
-            if (episode.links.length === 0) {
-              toast({
-                title: "No links available",
-                description: "This episode doesn't have any streaming links yet.",
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "All links",
-                description: `Showing all ${episode.links.length} available links for ${episode.title}`,
-              });
-            }
-          }}
-        >
-          {episode.links.length === 0 
-            ? "No Links Available" 
-            : hasMoreLinks 
-              ? `View All ${episode.links.length} Links`
-              : "View Links"
-          }
-        </Button>
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-gray-300 mb-4">{episode.description}</p>
+        <Separator className="bg-space-lighter mb-4" />
+        {episode.links && episode.links.length > 0 ? (
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="links">
+              <AccordionTrigger className="text-portal-blue hover:underline-none">Streaming Links ({episode.links.length})</AccordionTrigger>
+              <AccordionContent>
+                <ul className="list-disc list-inside text-gray-300">
+                  {episode.links.map((link) => (
+                    <li key={link.id} className="mb-1 flex items-center">
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm hover:underline flex items-center"
+                      >
+                        {link.sourceName} - {link.quality}
+                        <ExternalLink className="ml-1 h-3 w-3 inline" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        ) : (
+          <p className="text-sm text-gray-400">No streaming links available.</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

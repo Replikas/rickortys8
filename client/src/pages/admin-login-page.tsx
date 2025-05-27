@@ -1,70 +1,30 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
+import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
-// import { useToast } from "@/hooks/use-toast"; // Temporarily removed
-import { useLocation } from 'wouter'; // Import useLocation
+import { useLocation } from "wouter";
 
-export default function AdminLoginPage() {
-  const [password, setPassword] = useState("");
-  const queryClient = useQueryClient();
-  // const { toast } = useToast(); // Temporarily removed
-  const [, navigate] = useLocation(); // Use useLocation to get navigate
+export default function AdminLogin() {
+  const { loginWithRedirect, isAuthenticated, isLoading } = useAuth0();
+  const [, navigate] = useLocation();
 
-  const loginMutation = useMutation({
-    mutationFn: async (adminPassword: string) => {
-      console.log('Attempting login...');
-      const response = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ password: adminPassword }),
-        credentials: 'include', // Important: include cookies in the request
-      });
-      if (!response.ok) {
-        console.error('Login failed:', response.status);
-        throw new Error("Login failed");
-      }
-      const data = await response.json();
-      console.log('Login response:', data);
-      return data;
-    },
-    onSuccess: async () => {
-      console.log('Login successful, invalidating queries...');
-      setPassword("");
-      // Invalidate and refetch the admin status query
-      await queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
-      console.log('Queries invalidated, refetching...');
-      await queryClient.refetchQueries({ queryKey: ["/api/admin/status"] });
-      console.log('Queries refetched, navigating to /admin...');
-      navigate('/admin'); // Navigate to admin dashboard after successful login
-    },
-    onError: (error) => {
-      console.error('Login error:', error);
-    },
-  });
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isAuthenticated) {
+    navigate("/admin");
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-space-dark text-white flex items-center justify-center p-4">
-      <div className="bg-space-surface/90 backdrop-blur-sm p-8 rounded-lg border border-space-lighter shadow-xl text-center max-w-sm w-full">
-        <h1 className="text-2xl font-bold mb-6">Admin Login</h1>
-        <div className="flex flex-col items-center space-y-4">
-          <Input
-            type="password"
-            placeholder="Admin Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="bg-space-dark border-gray-600 rounded-md px-3 py-2 text-base text-white placeholder-gray-400 focus:ring-1 focus:ring-portal-blue focus:border-transparent w-full"
-          />
-          <Button 
-            onClick={() => loginMutation.mutate(password)} 
-            variant="outline"
-            className="bg-space-lighter hover:bg-space-lighter/80 border-space-lighter text-white text-base w-full"
-          >
-            Login
-          </Button>
-        </div>
+    <div className="min-h-screen bg-space-dark text-white flex items-center justify-center">
+      <div className="bg-space-surface p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+        <Button
+          onClick={() => loginWithRedirect()}
+          className="w-full bg-portal-blue hover:bg-portal-blue/80"
+        >
+          Login with Auth0
+        </Button>
       </div>
     </div>
   );

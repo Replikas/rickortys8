@@ -8,6 +8,11 @@ import AddEpisodeModal from "@/components/add-episode-modal";
 import { Button } from "@/components/ui/button";
 import { Plus, Tv, Link } from "lucide-react";
 import type { EpisodeWithLinks } from "@shared/schema";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Home() {
   const queryClient = useQueryClient();
@@ -16,14 +21,28 @@ export default function Home() {
   const [isAddEpisodeModalOpen, setIsAddEpisodeModalOpen] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [visibleEpisodes, setVisibleEpisodes] = useState(6);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newEpisodeData, setNewEpisodeData] = useState({
+    code: '',
+    title: '',
+    description: '',
+    airDate: '',
+    duration: '',
+  });
+  const [newLinkData, setNewLinkData] = useState({
+    episodeId: '',
+    url: '',
+    platform: '',
+    quality: '',
+  });
 
   // Fetch episodes with links from the database
   const { data: episodes = [], isLoading, refetch } = useQuery<EpisodeWithLinks[]>({
     queryKey: ["/api/episodes"],
-    queryFn: async () => {
+    queryFn: async (): Promise<EpisodeWithLinks[]> => {
       const response = await fetch("/api/episodes");
       if (!response.ok) throw new Error("Failed to fetch episodes");
-      return response.json() as EpisodeWithLinks[];
+      return response.json();
     },
   });
 
@@ -50,6 +69,108 @@ export default function Home() {
   const refetchEpisodes = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
   };
+
+  // Handler for adding a new episode
+  const handleAddEpisode = async () => {
+    // Basic validation
+    if (!newEpisodeData.code || !newEpisodeData.title) {
+      toast({
+        title: "Missing Information",
+        description: "Episode code and title are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/episodes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newEpisodeData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add episode");
+      }
+
+      toast({
+        title: "Success!",
+        description: "Episode added successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      setShowAddModal(false);
+      setNewEpisodeData({
+        code: '',
+        title: '',
+        description: '',
+        airDate: '',
+        duration: '',
+      });
+    } catch (error: any) { // Explicitly type error as any
+      console.error('Error adding episode:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add episode.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handler for adding a new streaming link
+  const handleAddLink = async () => {
+    // Basic validation
+    if (!newLinkData.episodeId || !newLinkData.url || !newLinkData.platform || !newLinkData.quality) {
+      toast({
+        title: "Missing Information",
+        description: "All link fields are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/streaming-links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newLinkData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add streaming link");
+      }
+
+      toast({
+        title: "Success!",
+        description: "Streaming link added successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/episodes/${newLinkData.episodeId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      setNewLinkData({
+        episodeId: '',
+        url: '',
+        platform: '',
+        quality: '',
+      });
+    } catch (error: any) { // Explicitly type error as any
+      console.error('Error adding link:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add streaming link.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) return <div>Loading episodes...</div>;
+  if (error) return <div>Error loading episodes: {(error as Error).message}</div>;
 
   return (
     <div className="min-h-screen bg-space-dark text-white">

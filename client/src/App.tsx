@@ -1,74 +1,31 @@
-import { Switch, Route, Redirect } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import Home from "@/pages/home";
-import NotFound from "@/pages/not-found";
-import AdminDashboard from "@/pages/admin-dashboard";
-import AdminLoginPage from "@/pages/admin-login-page";
-import type { ComponentType } from 'react';
-
-// Define the props for ProtectedRoute
-interface ProtectedRouteProps {
-  component: ComponentType<any>;
-  path: string;
-  [key: string]: any; // Allow other route props
-}
-
-function Router() {
-  const { data: adminStatus, isLoading } = useQuery({
-    queryKey: ["/api/admin/status"],
-    queryFn: async () => {
-      console.log('Checking admin status...');
-      const response = await fetch("/api/admin/status", {
-        credentials: 'include', // Important: include cookies in the request
-      });
-      if (!response.ok) throw new Error("Failed to fetch admin status");
-      const data = await response.json();
-      console.log('Admin status response:', data);
-      return data;
-    },
-    staleTime: 0, // Remove stale time to always refetch
-    refetchOnMount: true, // Refetch when component mounts
-  });
-
-  // Simple protected route wrapper
-  const ProtectedRoute = ({ component: Component, ...rest }: ProtectedRouteProps) => {
-    console.log('ProtectedRoute render - isLoading:', isLoading, 'adminStatus:', adminStatus);
-    if (isLoading) {
-      return <div className="min-h-screen bg-space-dark text-white flex items-center justify-center">
-        <p>Loading...</p>
-      </div>;
-    }
-    
-    if (!adminStatus?.isAdmin) {
-      console.log('Not admin, redirecting to login...');
-      return <Redirect to="/admin/login" />;
-    }
-
-    console.log('Admin authenticated, rendering protected route...');
-    return <Route {...rest} component={Component} />;
-  };
-
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/admin/login" component={AdminLoginPage} />
-      <ProtectedRoute path="/admin" component={AdminDashboard} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Auth0Provider } from "@auth0/auth0-react";
+import Home from "./pages/home";
+import AdminDashboard from "./pages/admin-dashboard";
+import AdminLogin from "./pages/admin-login-page";
+import { Toaster } from "./components/ui/toaster";
+import { useToast } from "./hooks/use-toast";
 
 function App() {
+  const { toast } = useToast();
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+    <Auth0Provider
+      domain={import.meta.env.VITE_AUTH0_DOMAIN || ""}
+      clientId={import.meta.env.VITE_AUTH0_CLIENT_ID || ""}
+      authorizationParams={{
+        redirect_uri: window.location.origin
+      }}
+    >
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+        </Routes>
         <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+      </Router>
+    </Auth0Provider>
   );
 }
 
