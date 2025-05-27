@@ -135,7 +135,7 @@ app.use((req, res, next) => {
   const port = process.env.PORT || 3001;
   server.listen({
     port,
-    host: "127.0.0.1",
+    host: "0.0.0.0",
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
