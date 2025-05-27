@@ -13,6 +13,7 @@ export default function AdminLoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (adminPassword: string) => {
+      console.log('Attempting login...');
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: {
@@ -21,20 +22,25 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ password: adminPassword }),
       });
       if (!response.ok) {
+        console.error('Login failed:', response.status);
         throw new Error("Login failed");
       }
-      return response.json();
+      const data = await response.json();
+      console.log('Login response:', data);
+      return data;
     },
     onSuccess: async () => {
-      // Removed toast call
+      console.log('Login successful, invalidating queries...');
       setPassword("");
       // Invalidate and refetch the admin status query
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
+      console.log('Queries invalidated, refetching...');
       await queryClient.refetchQueries({ queryKey: ["/api/admin/status"] });
+      console.log('Queries refetched, navigating to /admin...');
       navigate('/admin'); // Navigate to admin dashboard after successful login
     },
     onError: (error) => {
-      // Removed toast call
+      console.error('Login error:', error);
     },
   });
 

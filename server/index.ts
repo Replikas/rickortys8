@@ -58,7 +58,7 @@ app.post("/api/admin/logout", (req, res) => {
 
 // Check admin status endpoint
 app.get("/api/admin/status", (req, res) => {
-  log(`Admin status check - Session ID: ${req.sessionID}, isAdmin: ${!!req.session?.isAdmin}`);
+  log(`Admin status check - Session ID: ${req.sessionID}, isAdmin: ${!!req.session?.isAdmin}, Session data: ${JSON.stringify(req.session)}`);
   res.json({ isAdmin: !!req.session?.isAdmin });
 });
 
