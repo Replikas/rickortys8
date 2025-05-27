@@ -32,7 +32,7 @@ import { DatabaseStorage } from "./storage";
 export const storage = new DatabaseStorage(); // Import and export the storage instance
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ? `${process.env.DATABASE_URL}?sslmode=require` : undefined,
+  connectionString: process.env.DATABASE_URL ? `${process.env.DATABASE_URL}?sslmode=require&use_web_sockets=false` : undefined,
 });
 
 export const db = drizzle(pool, { schema }); // Pass the schema here
