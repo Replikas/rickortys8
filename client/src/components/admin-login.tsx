@@ -76,7 +76,7 @@ export default function AdminLogin() {
     return (
       <Button
         variant="outline"
-        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+        className="bg-space-surface/80 backdrop-blur-sm text-red-500 hover:text-red-600 hover:bg-red-500/10"
         onClick={() => logoutMutation.mutate()}
       >
         Logout Admin
@@ -85,18 +85,19 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-2 bg-space-surface/80 backdrop-blur-sm p-2 rounded-lg">
       <Input
         type="password"
         placeholder="Admin Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="w-40"
+        className="w-40 bg-space-lighter border-gray-600 text-white placeholder-gray-400"
       />
       <Button
         variant="outline"
         onClick={() => loginMutation.mutate()}
         disabled={!password}
+        className="bg-space-lighter hover:bg-space-dark text-white"
       >
         Login
       </Button>
