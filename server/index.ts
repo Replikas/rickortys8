@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupPingService } from "./ping";
 import session from "express-session";
-import { createClient } from "@upstash/redis";
+import { Redis } from "@upstash/redis";
 
 // Extend the session type to include isAdmin
 declare module 'express-session' {
@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Initialize Upstash Redis client
-const redis = createClient({
+const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL || "",
   token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
 });
