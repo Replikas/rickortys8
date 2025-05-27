@@ -1,4 +1,4 @@
-import { log } from "./vite";
+import { log } from "./vite.js";
 
 export function setupPingService() {
   // Ping every 14 minutes (Render sleeps after 15 minutes)

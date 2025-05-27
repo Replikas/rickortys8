@@ -26,9 +26,9 @@ log(`DATABASE_URL after dotenv config: ${process.env.DATABASE_URL}`);
 // Database connection (moved from db.ts)
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { Pool } from '@neondatabase/serverless';
-import * as schema from "@shared/schema";
+import * as schema from "../shared/schema.js";
 
-import { DatabaseStorage } from "./storage";
+import { DatabaseStorage } from "./storage.js";
 export const storage = new DatabaseStorage(); // Import and export the storage instance
 
 const pool = new Pool({
@@ -41,9 +41,9 @@ export const db = drizzle(pool, { schema }); // Pass the schema here
 console.log(`DATABASE_URL inside index.ts after dotenv: ${process.env.DATABASE_URL}`);
 
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import { setupPingService } from "./ping";
+import { registerRoutes } from "./routes.js";
+import { setupVite, serveStatic, log } from "./vite.js";
+import { setupPingService } from "./ping.js";
 import { auth } from "express-oauth2-jwt-bearer";
 
 const app = express();

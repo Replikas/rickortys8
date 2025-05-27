@@ -1,12 +1,12 @@
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./index"; // Import storage from index.ts
-import { insertStreamingLinkSchema, insertEpisodeSchema, type InsertEpisode } from "@shared/schema";
+import { storage } from "./index.js"; // Import storage from index.ts
+import { insertStreamingLinkSchema, insertEpisodeSchema, type InsertEpisode } from "../shared/schema.js";
 import { z } from "zod";
 import type { Session } from "express-session";
 import { Router } from "express";
 // import { pool } from "./db"; // Removed - pool is now in index.ts and not needed here
-import { log } from "./vite";
+import { log } from "./vite.js";
 
 // Extend Express Request type to include session
 interface RequestWithSession extends Request {
