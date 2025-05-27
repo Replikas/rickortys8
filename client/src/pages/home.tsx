@@ -37,7 +37,7 @@ export default function Home() {
   });
 
   // Fetch episodes with links from the database
-  const { data: episodes = [], isLoading, refetch } = useQuery<EpisodeWithLinks[]>({
+  const { data: episodes = [], isLoading, error, refetch } = useQuery<EpisodeWithLinks[]>({
     queryKey: ["/api/episodes"],
     queryFn: async (): Promise<EpisodeWithLinks[]> => {
       const response = await fetch("/api/episodes");
@@ -47,11 +47,11 @@ export default function Home() {
   });
 
   // Filter episodes based on search query
-  const filteredEpisodes = useMemo(() => {
+  const filteredEpisodes: EpisodeWithLinks[] = useMemo(() => {
     if (!searchQuery) return episodes;
     
     const query = searchQuery.toLowerCase();
-    return episodes.filter(episode => 
+    return episodes.filter((episode: EpisodeWithLinks) =>
       episode.title.toLowerCase().includes(query) ||
       episode.description.toLowerCase().includes(query) ||
       episode.code.toLowerCase().includes(query)
@@ -110,7 +110,7 @@ export default function Home() {
         airDate: '',
         duration: '',
       });
-    } catch (error: any) { // Explicitly type error as any
+    } catch (error: any) {
       console.error('Error adding episode:', error);
       toast({
         title: "Error",
@@ -159,7 +159,7 @@ export default function Home() {
         platform: '',
         quality: '',
       });
-    } catch (error: any) { // Explicitly type error as any
+    } catch (error: any) {
       console.error('Error adding link:', error);
       toast({
         title: "Error",
@@ -197,7 +197,7 @@ export default function Home() {
               </div>
             ))
           ) : displayedEpisodes.length > 0 ? (
-            displayedEpisodes.map((episode) => (
+            displayedEpisodes.map((episode: EpisodeWithLinks) => (
               <EpisodeCard 
                 key={episode.id} 
                 episode={episode} 

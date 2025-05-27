@@ -1,30 +1,54 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Auth0Provider } from "@auth0/auth0-react";
+import { Route, Router, Switch } from 'wouter';
 import Home from "./pages/home";
-import AdminDashboard from "./pages/admin-dashboard";
+import Header from "./components/header";
 import AdminLogin from "./pages/admin-login-page";
+import AdminDashboard from "./pages/admin-dashboard";
+
+import { Auth0Provider } from '@auth0/auth0-react';
 import { Toaster } from "./components/ui/toaster";
-import { useToast } from "./hooks/use-toast";
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 function App() {
-  const { toast } = useToast();
+  // Need to ensure client/.env is created with VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID
+  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
+  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
+  const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
+
+  if (!domain || !clientId || !audience) {
+    console.error("Auth0 environment variables not set!");
+    // Render a fallback or error message
+    return <div>Error: Auth0 environment variables not configured.</div>;
+  }
 
   return (
     <Auth0Provider
-      domain={import.meta.env.VITE_AUTH0_DOMAIN || ""}
-      clientId={import.meta.env.VITE_AUTH0_CLIENT_ID || ""}
+      domain={domain}
+      clientId={clientId}
       authorizationParams={{
-        redirect_uri: window.location.origin
+        redirect_uri: window.location.origin,
+        audience: audience,
       }}
     >
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-        </Routes>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Header 
+            searchQuery="" // Provide dummy search query for now
+            onSearchChange={() => {}} // Provide empty function for now
+          />
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/admin/login" component={AdminLogin} />
+            <Route path="/admin" component={AdminDashboard} />
+            {/* Catch-all for 404 */}
+            <Route>
+              {() => <div>404 Not Found</div>}
+            </Route>
+          </Switch>
+        </Router>
         <Toaster />
-      </Router>
+      </QueryClientProvider>
     </Auth0Provider>
   );
 }

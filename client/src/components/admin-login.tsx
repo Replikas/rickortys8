@@ -1,131 +1,35 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLogin() {
-  const [password, setPassword] = useState("");
-  const [showLogin, setShowLogin] = useState(false);
-  const { toast } = useToast();
+  const { loginWithRedirect, isAuthenticated, isLoading: authLoading } = useAuth0();
+  const [, navigate] = useLocation();
 
-  // Check admin status
-  const { data: adminStatus } = useQuery({
-    queryKey: ["/api/admin/status"],
-    queryFn: async () => {
-      const response = await fetch("/api/admin/status");
-      if (!response.ok) throw new Error("Failed to fetch admin status");
-      return response.json();
-    },
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  });
-
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (adminPassword: string) => {
-      const response = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ password: adminPassword }),
-      });
-      if (!response.ok) {
-        throw new Error("Login failed");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Login Successful",
-        description: "You are now logged in as admin.",
-      });
-      setPassword("");
-      setShowLogin(false);
-      // Note: Query invalidation for admin status was removed here
-    },
-    onError: (error) => {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/admin/logout", {
-        method: "POST",
-      });
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Logout Successful",
-        description: "You are now logged out.",
-      });
-      // Note: Query invalidation for admin status was removed here
-    },
-    onError: (error) => {
-      toast({
-        title: "Logout Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  if (adminStatus?.isAdmin) {
-    return (
-      <div className="flex items-center space-x-2">
-        <span className="text-yellow-400 text-sm font-bold">Admin Mode</span>
-        <Button 
-          onClick={() => logoutMutation.mutate()} 
-          disabled={logoutMutation.isLoading}
-          variant="ghost"
-          className="text-white hover:bg-white/10"
-        >
-          Logout
-        </Button>
-      </div>
-    );
+  // Check Auth0 loading state first
+  if (authLoading) {
+    return <div>Loading authentication...</div>;
   }
 
+  // If authenticated via Auth0, navigate to admin dashboard
+  if (isAuthenticated) {
+    navigate("/admin");
+    return null;
+  }
+
+  // If not authenticated, show Auth0 login button
   return (
-    <div className="flex items-center space-x-2">
-      {showLogin && (
-        <div className="bg-space-surface/90 backdrop-blur-sm p-3 rounded-lg border border-space-lighter flex items-center space-x-2">
-          <Input
-            type="password"
-            placeholder="Admin Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="bg-space-dark border-gray-600 rounded-md px-3 py-1 text-sm text-white placeholder-gray-400 focus:ring-1 focus:ring-portal-blue focus:border-transparent w-40"
-          />
-          <Button 
-            onClick={() => loginMutation.mutate(password)} 
-            disabled={loginMutation.isLoading || password.length === 0}
-            variant="outline"
-            className="bg-space-lighter hover:bg-space-lighter/80 border-space-lighter text-white text-sm"
-          >
-            Login
-          </Button>
-        </div>
-      )}
-      {!showLogin && (
-         <Button 
-           onClick={() => setShowLogin(true)}
-           variant="ghost"
-           className="text-white hover:bg-white/10"
-         >
-           Admin Login
-         </Button>
-      )}
+    <div className="min-h-screen bg-space-dark text-white flex items-center justify-center">
+      <div className="bg-space-surface p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+        <Button
+          onClick={() => loginWithRedirect()}
+          className="w-full bg-portal-blue hover:bg-portal-blue/80"
+        >
+          Login with Auth0
+        </Button>
+      </div>
     </div>
   );
 } 
