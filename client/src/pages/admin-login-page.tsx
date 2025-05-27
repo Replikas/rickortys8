@@ -8,6 +8,7 @@ import { navigate } from 'wouter';
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const loginMutation = useMutation({
     mutationFn: async (adminPassword: string) => {
