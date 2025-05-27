@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/header";
 import StatsBar from "@/components/stats-bar";
 import EpisodeCard from "@/components/episode-card";
@@ -10,6 +10,7 @@ import { Plus, Tv, Link } from "lucide-react";
 import type { EpisodeWithLinks } from "@shared/schema";
 
 export default function Home() {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
   const [isAddEpisodeModalOpen, setIsAddEpisodeModalOpen] = useState(false);
@@ -17,22 +18,12 @@ export default function Home() {
   const [visibleEpisodes, setVisibleEpisodes] = useState(6);
 
   // Fetch episodes with links from the database
-  const { data: episodes = [], isLoading, refetch } = useQuery({
+  const { data: episodes = [], isLoading, refetch } = useQuery<EpisodeWithLinks[]>({
     queryKey: ["/api/episodes"],
     queryFn: async () => {
       const response = await fetch("/api/episodes");
       if (!response.ok) throw new Error("Failed to fetch episodes");
       return response.json() as EpisodeWithLinks[];
-    },
-  });
-
-  // Check admin status
-  const { data: adminStatus } = useQuery({
-    queryKey: ["/api/admin/status"],
-    queryFn: async () => {
-      const response = await fetch("/api/admin/status");
-      if (!response.ok) throw new Error("Failed to fetch admin status");
-      return response.json();
     },
   });
 
@@ -55,8 +46,9 @@ export default function Home() {
     setVisibleEpisodes(prev => prev + 6);
   };
 
-  const handleAddLink = () => {
-    refetch(); // Refresh the episodes list after adding a link
+  // Function to refetch episodes after adding
+  const refetchEpisodes = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
   };
 
   return (
@@ -88,7 +80,6 @@ export default function Home() {
               <EpisodeCard 
                 key={episode.id} 
                 episode={episode} 
-                isAdmin={adminStatus?.isAdmin}
               />
             ))
           ) : (
@@ -124,7 +115,6 @@ export default function Home() {
                 setShowAddMenu(false);
               }}
               className="bg-portal-blue hover:bg-portal-blue/80 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
-              disabled={!adminStatus?.isAdmin}
             >
               <Tv className="w-4 h-4" />
               <span className="whitespace-nowrap">Add Episode</span>
@@ -135,7 +125,7 @@ export default function Home() {
                 setShowAddMenu(false);
               }}
               className="bg-rick-green hover:bg-rick-green/80 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
-              disabled={episodes.length === 0 || !adminStatus?.isAdmin}
+              disabled={episodes.length === 0}
             >
               <Link className="w-4 h-4" />
               <span className="whitespace-nowrap">Add Link</span>
@@ -147,7 +137,6 @@ export default function Home() {
           onClick={() => setShowAddMenu(!showAddMenu)}
           className="bg-gradient-to-r from-morty-orange to-rick-green hover:from-rick-green hover:to-morty-orange text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
           size="icon"
-          disabled={!adminStatus?.isAdmin}
         >
           <Plus className={`text-xl transition-transform duration-300 ${showAddMenu ? 'rotate-45' : ''}`} />
         </Button>
@@ -157,6 +146,7 @@ export default function Home() {
       <AddEpisodeModal 
         isOpen={isAddEpisodeModalOpen} 
         onClose={() => setIsAddEpisodeModalOpen(false)}
+        onEpisodeAdded={refetchEpisodes}
       />
 
       {/* Add Link Modal */}
@@ -164,7 +154,7 @@ export default function Home() {
         isOpen={isAddLinkModalOpen} 
         onClose={() => setIsAddLinkModalOpen(false)}
         episodes={episodes}
-        onAddLink={handleAddLink}
+        onAddLink={refetchEpisodes}
       />
     </div>
   );
