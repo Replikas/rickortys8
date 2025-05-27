@@ -25,12 +25,13 @@ export default function AdminLoginPage() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Removed toast call
       setPassword("");
-      // Invalidate the admin status query and navigate to admin dashboard
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
-      navigate('/admin'); // Use navigate from useLocation
+      // Invalidate and refetch the admin status query
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/admin/status"] });
+      navigate('/admin'); // Navigate to admin dashboard after successful login
     },
     onError: (error) => {
       // Removed toast call
