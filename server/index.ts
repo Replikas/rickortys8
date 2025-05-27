@@ -100,17 +100,26 @@ class UpstashStore extends Store {
   }
 }
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
 // Initialize Upstash Redis client
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL || "",
   token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
 });
 
-// Session configuration
+// Test Redis connection
+redis.ping().then(() => {
+  log("Successfully connected to Redis");
+}).catch((err) => {
+  log("Failed to connect to Redis:", err);
+});
+
+const app = express();
+
+// Basic middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Session configuration - MUST be before any routes that use sessions
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
@@ -121,7 +130,7 @@ app.use(
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
-    store: new UpstashStore(redis), // Use the custom store instance
+    store: new UpstashStore(redis),
   })
 );
 
@@ -134,10 +143,15 @@ app.use((req, res, next) => {
 
 // Admin login endpoint
 app.post("/api/admin/login", (req, res) => {
+  log("Login attempt - Session object:", req.session);
   const { password } = req.body;
   
   // Check if the password matches the admin password from environment variable
   if (password === process.env.ADMIN_PASSWORD) {
+    if (!req.session) {
+      log("Session is undefined in login handler");
+      return res.status(500).json({ message: "Session not initialized" });
+    }
     req.session.isAdmin = true;
     log(`Admin login successful - Session ID: ${req.sessionID}`);
     log(`Session after setting isAdmin:`, JSON.stringify(req.session));
