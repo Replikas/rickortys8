@@ -1,5 +1,6 @@
 import { Search, Tv } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import bannerImage from "@/assets/banner.jfif";
 import AdminLogin from "./admin-login";
 
 interface HeaderProps {
@@ -12,7 +13,11 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
     <>
       {/* Season 8 Banner */}
       <div className="relative overflow-hidden bg-gradient-to-b from-space-dark to-space-surface">
-        <div className="w-full h-64 md:h-80 bg-gradient-to-r from-portal-blue/20 via-rick-green/20 to-portal-blue/20 animate-gradient" />
+        <img 
+          src={bannerImage} 
+          alt="Rick and Morty Season 8" 
+          className="w-full h-64 md:h-80 object-cover object-center opacity-90"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
         <div className="absolute bottom-4 left-4 md:left-8">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl" style={{textShadow: '2px 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.8)'}}>
