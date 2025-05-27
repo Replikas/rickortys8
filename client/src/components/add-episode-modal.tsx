@@ -34,9 +34,10 @@ type FormData = z.infer<typeof formSchema>;
 interface AddEpisodeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onEpisodeAdded: () => void;
 }
 
-export default function AddEpisodeModal({ isOpen, onClose }: AddEpisodeModalProps) {
+export default function AddEpisodeModal({ isOpen, onClose, onEpisodeAdded }: AddEpisodeModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -74,6 +75,7 @@ export default function AddEpisodeModal({ isOpen, onClose }: AddEpisodeModalProp
       });
       form.reset();
       onClose();
+      onEpisodeAdded();
     },
     onError: () => {
       toast({
