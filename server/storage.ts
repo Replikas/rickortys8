@@ -7,10 +7,12 @@ export interface IStorage {
   getAllEpisodes(): Promise<Episode[]>;
   getEpisode(id: number): Promise<Episode | undefined>;
   createEpisode(episode: InsertEpisode): Promise<Episode>;
+  deleteEpisode(id: number): Promise<void>;
   
   // Streaming Links
   getStreamingLinksForEpisode(episodeId: number): Promise<StreamingLink[]>;
   createStreamingLink(link: InsertStreamingLink): Promise<StreamingLink>;
+  deleteStreamingLinksForEpisode(episodeId: number): Promise<void>;
   
   // Combined
   getEpisodesWithLinks(): Promise<EpisodeWithLinks[]>;
@@ -156,6 +158,14 @@ export class MemStorage implements IStorage {
       episode.description.toLowerCase().includes(lowerQuery)
     );
   }
+
+  async deleteEpisode(id: number): Promise<void> {
+    this.episodes.delete(id);
+  }
+
+  async deleteStreamingLinksForEpisode(episodeId: number): Promise<void> {
+    this.streamingLinks.clear();
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -176,6 +186,10 @@ export class DatabaseStorage implements IStorage {
     return episode;
   }
 
+  async deleteEpisode(id: number): Promise<void> {
+    await db.delete(episodes).where(eq(episodes.id, id));
+  }
+
   async getStreamingLinksForEpisode(episodeId: number): Promise<StreamingLink[]> {
     return await db.select().from(streamingLinks).where(eq(streamingLinks.episodeId, episodeId));
   }
@@ -186,6 +200,10 @@ export class DatabaseStorage implements IStorage {
       .values(link)
       .returning();
     return streamingLink;
+  }
+
+  async deleteStreamingLinksForEpisode(episodeId: number): Promise<void> {
+    await db.delete(streamingLinks).where(eq(streamingLinks.episodeId, episodeId));
   }
 
   async getEpisodesWithLinks(): Promise<EpisodeWithLinks[]> {
