@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx server/bootstrap.ts",
-    "build": "NODE_OPTIONS=--max-old-space-size=4096 tsc --project tsconfig.json",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 tsc --project tsconfig.json && cp -r shared dist/",
     "start": "npm run build && node ./dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
