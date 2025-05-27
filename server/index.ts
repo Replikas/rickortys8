@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupPingService } from "./ping";
 import session from "express-session";
+import { RedisStore } from "connect-redis";
+import { createClient } from "redis";
 
 // Extend the session type to include isAdmin
 declare module 'express-session' {
@@ -15,12 +17,26 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Initialize Redis client
+const redisClient = createClient({
+  url: process.env.REDIS_URL || "redis://localhost:6379"
+});
+
+redisClient.on('error', (err: Error) => {
+  log('Redis Client Error: ' + err.message);
+});
+
+redisClient.on('connect', () => {
+  log('Redis Client Connected');
+});
+
 // Session configuration
 app.use(
   session({
+    store: new RedisStore({ client: redisClient }),
     secret: process.env.SESSION_SECRET || "your-secret-key",
-    resave: true,
-    saveUninitialized: true,
+    resave: false,
+    saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -118,6 +134,15 @@ app.use((req, res, next) => {
     serveStatic(app);
     // Start ping service in production
     setupPingService();
+  }
+
+  // Connect to Redis before starting the server
+  try {
+    await redisClient.connect();
+    log('Connected to Redis');
+  } catch (error) {
+    log('Failed to connect to Redis: ' + (error instanceof Error ? error.message : String(error)));
+    process.exit(1);
   }
 
   // Use Render's PORT or fallback to 3000
