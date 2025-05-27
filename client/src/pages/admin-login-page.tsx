@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { navigate } from 'wouter/use-location';
+import { navigate } from 'wouter';
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
