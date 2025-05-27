@@ -2,13 +2,11 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { navigate } from 'wouter';
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const loginMutation = useMutation({
     mutationFn: async (adminPassword: string) => {
@@ -25,21 +23,12 @@ export default function AdminLoginPage() {
       return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Login Successful",
-        description: "You are now logged in as admin.",
-      });
       setPassword("");
       // Invalidate the admin status query and navigate to admin dashboard
       queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
       navigate('/admin'); // Navigate to admin dashboard after successful login
     },
     onError: (error) => {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        variant: "destructive",
-      });
     },
   });
 
