@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminLoginPage from "@/pages/admin-login-page";
 import type { ComponentType } from 'react';
 
 // Define the props for ProtectedRoute
@@ -33,7 +34,7 @@ function Router() {
     }
     
     if (!adminStatus?.isAdmin) {
-      return <Redirect to="/" />;
+      return <Redirect to="/admin/login" />;
     }
 
     return <Route {...rest} component={Component} />;
@@ -42,6 +43,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/admin/login" component={AdminLoginPage} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
