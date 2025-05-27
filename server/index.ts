@@ -3,7 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupPingService } from "./ping";
 import session from "express-session";
-import MemoryStore from "memorystore";
+import pgSession from "connect-pg-simple";
+import { pool } from "./db";
 
 // Extend the session type to include isAdmin
 declare module 'express-session' {
@@ -17,14 +18,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Session configuration
-const MemoryStoreSession = MemoryStore(session);
+const PgSession = pgSession(session);
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
-    store: new MemoryStoreSession({
-      checkPeriod: 86400000, // prune expired entries every 24h
+    store: new PgSession({
+      pool,
+      tableName: 'session', // Use a different table name
+      createTableIfMissing: true,
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
