@@ -2,11 +2,14 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { navigate } from 'wouter';
+// import { useToast } from "@/hooks/use-toast"; // Temporarily removed
+import { useLocation } from 'wouter'; // Import useLocation
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const queryClient = useQueryClient();
+  // const { toast } = useToast(); // Temporarily removed
+  const [, navigate] = useLocation(); // Use useLocation to get navigate
 
   const loginMutation = useMutation({
     mutationFn: async (adminPassword: string) => {
@@ -23,12 +26,14 @@ export default function AdminLoginPage() {
       return response.json();
     },
     onSuccess: () => {
+      // Removed toast call
       setPassword("");
       // Invalidate the admin status query and navigate to admin dashboard
       queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
-      navigate('/admin'); // Navigate to admin dashboard after successful login
+      navigate('/admin'); // Use navigate from useLocation
     },
     onError: (error) => {
+      // Removed toast call
     },
   });
 
