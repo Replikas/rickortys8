@@ -37,37 +37,49 @@ class UpstashStore extends Store {
   }
 
   async get(sid: string, callback: (err: any, session?: session.SessionData | null) => void): Promise<void> {
+    log(`UpstashStore get: Attempting to get session for sid: ${sid}`);
     try {
       const data = await this.redis.get(`sess:${sid}`);
+      log(`UpstashStore get: Retrieved data for sid ${sid}:`, data);
       if (!data) {
+        log(`UpstashStore get: No data found for sid: ${sid}`);
         return callback(null, null);
       }
-      callback(null, JSON.parse(data as string));
+      if (typeof data !== 'string') {
+         log(`UpstashStore get error: Retrieved data for sid ${sid} is not a string, type is ${typeof data}`, String(data));
+         return callback(new Error('Invalid session data format'));
+      }
+      log(`UpstashStore get: Successfully retrieved and parsed session for sid: ${sid}`);
+      callback(null, JSON.parse(data));
     } catch (err) {
-      log('UpstashStore get error:', String(err));
+      log('UpstashStore get error for sid ' + sid + ':', String(err));
       callback(err);
     }
   }
 
   async set(sid: string, session: session.SessionData, callback: (err?: any) => void): Promise<void> {
+     log(`UpstashStore set: Attempting to set session for sid: ${sid}`);
     try {
       // Set with expiration - using default session maxAge for now
       // If cookie.maxAge is set, use that, otherwise use a default (e.g., 24 hours in ms) converted to seconds
       const maxAgeSeconds = typeof session.cookie.maxAge === 'number' ? Math.floor(session.cookie.maxAge / 1000) : 24 * 60 * 60;
       await this.redis.set(`sess:${sid}`, JSON.stringify(session), { ex: maxAgeSeconds });
+      log(`UpstashStore set: Successfully set session for sid: ${sid} with expiry ${maxAgeSeconds}s`);
       callback(null);
     } catch (err) {
-      log('UpstashStore set error:', String(err));
+      log('UpstashStore set error for sid ' + sid + ':', String(err as any));
       callback(err);
     }
   }
 
   async destroy(sid: string, callback: (err?: any) => void): Promise<void> {
+    log(`UpstashStore destroy: Attempting to destroy session for sid: ${sid}`);
     try {
       await this.redis.del(`sess:${sid}`);
+       log(`UpstashStore destroy: Successfully destroyed session for sid: ${sid}`);
       callback(null);
     } catch (err) {
-      log('UpstashStore destroy error:', String(err));
+      log('UpstashStore destroy error for sid ' + sid + ':', String(err as any));
       callback(err);
     }
   }
@@ -75,12 +87,14 @@ class UpstashStore extends Store {
   // Optionally implement touch, all, length, clear
   // touch method to update the expiration time of a session
   async touch(sid: string, session: session.SessionData, callback: (err?: any) => void): Promise<void> {
+     log(`UpstashStore touch: Attempting to touch session for sid: ${sid}`);
      try {
         const maxAgeSeconds = typeof session.cookie.maxAge === 'number' ? Math.floor(session.cookie.maxAge / 1000) : 24 * 60 * 60;
         await this.redis.expire(`sess:${sid}`, maxAgeSeconds);
+        log(`UpstashStore touch: Successfully touched session for sid: ${sid} with expiry ${maxAgeSeconds}s`);
         callback(null);
      } catch (err) {
-        log('UpstashStore touch error:', String(err));
+        log('UpstashStore touch error for sid ' + sid + ':', String(err as any));
         callback(err);
      }
   }
@@ -101,7 +115,7 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
