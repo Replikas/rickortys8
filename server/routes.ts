@@ -4,6 +4,9 @@ import { storage } from "./storage";
 import { insertStreamingLinkSchema, insertEpisodeSchema } from "@shared/schema";
 import { z } from "zod";
 import type { Session } from "express-session";
+import { Router } from "express";
+import { pool } from "./db"; // Assuming pool is exported from db.ts
+import { log } from "./vite";
 
 // Extend Express Request type to include session
 interface RequestWithSession extends Request {

@@ -2,116 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupPingService } from "./ping";
-import session from "express-session";
-import { Redis } from "@upstash/redis";
-import { Store } from "express-session";
-
-// Extend the session type to include isAdmin
-declare module 'express-session' {
-  interface SessionData {
-    isAdmin?: boolean;
-  }
-}
-
-// Custom Upstash session store
-class UpstashStore extends Store {
-  private redis: Redis;
-
-  constructor(redisClient: Redis) {
-    super();
-    this.redis = redisClient;
-  }
-
-  // Required by express-session, even if not used by a REST client
-  on(event: string, listener: (...args: any[]) => void): this {
-    // This store doesn't emit events like a traditional client
-    // We can potentially log if we receive unexpected events
-    if (event !== 'connect' && event !== 'disconnect') {
-      log(`UpstashStore received unexpected event: ${event}`);
-    }
-    // For the 'disconnect' event, we should call the listener immediately as a REST client is always 'disconnected' in a traditional sense.
-    if (event === 'disconnect') {
-       listener();
-    }
-    return this; // Return this for chaining
-  }
-
-  async get(sid: string, callback: (err: any, session?: session.SessionData | null) => void): Promise<void> {
-    log(`UpstashStore get: Attempting to get session for sid: ${sid}`);
-    try {
-      const data = await this.redis.get(`sess:${sid}`);
-      log(`UpstashStore get: Retrieved data for sid ${sid}:`, data);
-      if (!data) {
-        log(`UpstashStore get: No data found for sid: ${sid}`);
-        return callback(null, null);
-      }
-      if (typeof data !== 'string') {
-         log(`UpstashStore get error: Retrieved data for sid ${sid} is not a string, type is ${typeof data}`, String(data));
-         return callback(new Error('Invalid session data format'));
-      }
-      log(`UpstashStore get: Successfully retrieved and parsed session for sid: ${sid}`);
-      callback(null, JSON.parse(data));
-    } catch (err) {
-      log('UpstashStore get error for sid ' + sid + ':', String(err));
-      callback(err);
-    }
-  }
-
-  async set(sid: string, session: session.SessionData, callback: (err?: any) => void): Promise<void> {
-     log(`UpstashStore set: Attempting to set session for sid: ${sid}`);
-    try {
-      // Set with expiration - using default session maxAge for now
-      // If cookie.maxAge is set, use that, otherwise use a default (e.g., 24 hours in ms) converted to seconds
-      const maxAgeSeconds = typeof session.cookie.maxAge === 'number' ? Math.floor(session.cookie.maxAge / 1000) : 24 * 60 * 60;
-      await this.redis.set(`sess:${sid}`, JSON.stringify(session), { ex: maxAgeSeconds });
-      log(`UpstashStore set: Successfully set session for sid: ${sid} with expiry ${maxAgeSeconds}s`);
-      callback(null);
-    } catch (err) {
-      log('UpstashStore set error for sid ' + sid + ':', String(err as any));
-      callback(err);
-    }
-  }
-
-  async destroy(sid: string, callback: (err?: any) => void): Promise<void> {
-    log(`UpstashStore destroy: Attempting to destroy session for sid: ${sid}`);
-    try {
-      await this.redis.del(`sess:${sid}`);
-       log(`UpstashStore destroy: Successfully destroyed session for sid: ${sid}`);
-      callback(null);
-    } catch (err) {
-      log('UpstashStore destroy error for sid ' + sid + ':', String(err as any));
-      callback(err);
-    }
-  }
-
-  // Optionally implement touch, all, length, clear
-  // touch method to update the expiration time of a session
-  async touch(sid: string, session: session.SessionData, callback: (err?: any) => void): Promise<void> {
-     log(`UpstashStore touch: Attempting to touch session for sid: ${sid}`);
-     try {
-        const maxAgeSeconds = typeof session.cookie.maxAge === 'number' ? Math.floor(session.cookie.maxAge / 1000) : 24 * 60 * 60;
-        await this.redis.expire(`sess:${sid}`, maxAgeSeconds);
-        log(`UpstashStore touch: Successfully touched session for sid: ${sid} with expiry ${maxAgeSeconds}s`);
-        callback(null);
-     } catch (err) {
-        log('UpstashStore touch error for sid ' + sid + ':', String(err as any));
-        callback(err);
-     }
-  }
-}
-
-// Initialize Upstash Redis client
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || "",
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
-});
-
-// Test Redis connection
-redis.ping().then(() => {
-  log("Successfully connected to Redis");
-}).catch((err) => {
-  log("Failed to connect to Redis:", err);
-});
+import { auth } from "express-oauth2-jwt-bearer";
 
 const app = express();
 
@@ -119,63 +10,29 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Session configuration - MUST be before any routes that use sessions
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "your-secret-key",
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-    store: new UpstashStore(redis),
-  })
-);
-
-// Add session debugging middleware
-app.use((req, res, next) => {
-  log(`Request to ${req.path} - Session ID: ${req.sessionID}`);
-  log(`Session before request:`, JSON.stringify(req.session));
-  next();
+// Auth0 configuration
+const checkJwt = auth({
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
 });
 
-// Admin login endpoint
-app.post("/api/admin/login", (req, res) => {
-  log("Login attempt - Session object:", req.session);
-  const { password } = req.body;
-  
-  // Check if the password matches the admin password from environment variable
-  if (password === process.env.ADMIN_PASSWORD) {
-    if (!req.session) {
-      log("Session is undefined in login handler");
-      return res.status(500).json({ message: "Session not initialized" });
+// Protected route middleware
+const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  checkJwt(req, res, (err) => {
+    if (err) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
-    req.session.isAdmin = true;
-    log(`Admin login successful - Session ID: ${req.sessionID}`);
-    log(`Session after setting isAdmin:`, JSON.stringify(req.session));
-    res.json({ message: "Login successful" });
-  } else {
-    log(`Admin login failed - Session ID: ${req.sessionID}`);
-    res.status(401).json({ message: "Invalid password" });
-  }
-});
-
-// Admin logout endpoint
-app.post("/api/admin/logout", (req, res) => {
-  log(`Logging out - Session ID: ${req.sessionID}`);
-  log(`Session before logout:`, JSON.stringify(req.session));
-  req.session.destroy(() => {
-    res.json({ message: "Logged out successfully" });
+    next();
   });
+};
+
+// Admin routes
+app.post("/api/admin/login", (req, res) => {
+  res.status(400).json({ message: "Please use Auth0 login" });
 });
 
-// Check admin status endpoint
-app.get("/api/admin/status", (req, res) => {
-  log(`Admin status check - Session ID: ${req.sessionID}`);
-  log(`Session during status check:`, JSON.stringify(req.session));
-  res.json({ isAdmin: !!req.session?.isAdmin });
+app.get("/api/admin/status", requireAuth, (req, res) => {
+  res.json({ isAdmin: true });
 });
 
 app.use((req, res, next) => {
