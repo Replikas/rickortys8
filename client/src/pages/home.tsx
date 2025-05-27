@@ -75,7 +75,11 @@ export default function Home() {
             ))
           ) : displayedEpisodes.length > 0 ? (
             displayedEpisodes.map((episode) => (
-              <EpisodeCard key={episode.id} episode={episode} />
+              <EpisodeCard 
+                key={episode.id} 
+                episode={episode} 
+                isAdmin={true} // TODO: Replace with actual admin check
+              />
             ))
           ) : (
             <div className="col-span-full text-center py-12">

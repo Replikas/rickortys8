@@ -3,16 +3,15 @@ export interface Episode {
   code: string;
   title: string;
   description: string;
-  airDate: string;
-  duration: number;
+  episodeNumber: number;
 }
 
 export interface StreamingLink {
   id: number;
   episodeId: number;
-  platform: string;
   url: string;
   quality: string;
+  sourceName: string;
 }
 
 export interface EpisodeWithLinks extends Episode {
@@ -21,7 +20,7 @@ export interface EpisodeWithLinks extends Episode {
 
 export interface InsertStreamingLink {
   episodeId: number;
-  platform: string;
   url: string;
   quality: string;
+  sourceName: string;
 }

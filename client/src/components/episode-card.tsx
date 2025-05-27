@@ -1,14 +1,53 @@
-import { ExternalLink, Link as LinkIcon } from "lucide-react";
+import { ExternalLink, Link as LinkIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { EpisodeWithLinks } from "@/types/episode";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface EpisodeCardProps {
   episode: EpisodeWithLinks;
+  isAdmin?: boolean;
 }
 
-export default function EpisodeCard({ episode }: EpisodeCardProps) {
+export default function EpisodeCard({ episode, isAdmin = false }: EpisodeCardProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteEpisodeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/episodes/${episode.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete episode");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
+      toast({
+        title: "Success!",
+        description: "Episode deleted successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete episode",
+        variant: "destructive",
+      });
+    },
+  });
 
   const convertToStreamableUrl = (url: string) => {
     // Convert Google Drive share links to direct streaming links
@@ -54,11 +93,45 @@ export default function EpisodeCard({ episode }: EpisodeCardProps) {
               {episode.title}
             </h3>
           </div>
-          <div className="flex items-center space-x-1">
-            <LinkIcon className="text-rick-green text-sm h-4 w-4" />
-            <span className="text-xs text-rick-green font-medium">
-              {episode.links.length} link{episode.links.length !== 1 ? 's' : ''}
-            </span>
+          <div className="flex items-center space-x-2">
+            {isAdmin && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-space-surface border-space-lighter">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white">Delete Episode</AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-400">
+                      Are you sure you want to delete this episode? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-space-lighter text-white hover:bg-space-dark">
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteEpisodeMutation.mutate()}
+                      className="bg-red-500 text-white hover:bg-red-600"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <div className="flex items-center space-x-1">
+              <LinkIcon className="text-rick-green text-sm h-4 w-4" />
+              <span className="text-xs text-rick-green font-medium">
+                {episode.links.length} link{episode.links.length !== 1 ? 's' : ''}
+              </span>
+            </div>
           </div>
         </div>
         
@@ -67,35 +140,33 @@ export default function EpisodeCard({ episode }: EpisodeCardProps) {
         </p>
         
         {/* Quick Links */}
-        {episode.links.length > 0 && (
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-400">Quality</span>
-              <span className="text-gray-400">Source</span>
-              <span className="text-gray-400">Action</span>
-            </div>
-            
-            {displayedLinks.map((link) => (
-              <div
-                key={link.id}
-                className="flex items-center justify-between py-2 px-3 bg-space-lighter rounded-lg hover:bg-space-dark transition-colors"
-              >
-                <span className="text-xs font-medium text-white">
-                  {link.quality}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {link.platform}
-                </span>
-                <button
-                  onClick={() => handleStreamClick(link.url, link.platform)}
-                  className="text-portal-blue hover:text-white transition-colors"
-                >
-                  <ExternalLink className="text-xs h-3 w-3" />
-                </button>
-              </div>
-            ))}
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-400">Quality</span>
+            <span className="text-gray-400">Source</span>
+            <span className="text-gray-400">Action</span>
           </div>
-        )}
+          
+          {displayedLinks.map((link) => (
+            <div
+              key={link.id}
+              className="flex items-center justify-between py-2 px-3 bg-space-lighter rounded-lg hover:bg-space-dark transition-colors"
+            >
+              <span className="text-xs font-medium text-white">
+                {link.quality}
+              </span>
+              <span className="text-xs text-gray-400">
+                {link.sourceName}
+              </span>
+              <button
+                onClick={() => handleStreamClick(link.url, link.sourceName)}
+                className="text-portal-blue hover:text-white transition-colors"
+              >
+                <ExternalLink className="text-xs h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
         
         <Button
           className="w-full bg-gradient-to-r from-portal-blue to-rick-green text-white py-2 px-4 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
