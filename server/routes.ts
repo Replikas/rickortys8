@@ -53,16 +53,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create new episode
   app.post("/api/episodes", async (req, res) => {
+    const { code, title, description, airDate, duration } = req.body;
+
+    // Validate incoming data
+    const parseResult = insertEpisodeSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ message: 'Invalid episode data', errors: parseResult.error.flatten().fieldErrors });
+    }
+
     try {
-      const episodeData = insertEpisodeSchema.parse(req.body);
-      const episode = await storage.createEpisode(episodeData);
-      res.status(201).json(episode);
+      const newEpisode = storage.createEpisode(parseResult.data);
+      res.status(201).json(newEpisode);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid episode data", errors: error.errors });
-      }
-      console.error("Error creating episode:", error);
-      res.status(500).json({ message: "Failed to create episode" });
+      console.error('Error creating episode:', error);
+      res.status(500).json({ message: 'Failed to create episode' });
     }
   });
 
