@@ -5,6 +5,13 @@ import { setupPingService } from "./ping";
 import session from "express-session";
 import MemoryStore from "memorystore";
 
+// Extend the session type to include isAdmin
+declare module 'express-session' {
+  interface SessionData {
+    isAdmin?: boolean;
+  }
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -21,6 +28,7 @@ app.use(
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   })
