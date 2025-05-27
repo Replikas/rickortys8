@@ -3,10 +3,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertStreamingLinkSchema, insertEpisodeSchema } from "@shared/schema";
 import { z } from "zod";
+import type { Session } from "express-session";
 
 // Extend Express Request type to include session
 interface RequestWithSession extends Request {
-  session?: {
+  session: Session & {
     isAdmin?: boolean;
   };
 }
@@ -15,7 +16,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all episodes with their streaming links
   app.get("/api/episodes", async (req, res) => {
     try {
+      console.log('Fetching all episodes with links...');
       const episodes = await storage.getEpisodesWithLinks();
+      console.log(`Found ${episodes.length} episodes`);
       res.json(episodes);
     } catch (error) {
       console.error("Error fetching episodes:", error);
