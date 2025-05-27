@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
+  const [showLogin, setShowLogin] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -17,31 +18,38 @@ export default function AdminLogin() {
       if (!response.ok) throw new Error("Failed to fetch admin status");
       return response.json();
     },
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
   // Login mutation
   const loginMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (adminPassword: string) => {
       const response = await fetch("/api/admin/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: adminPassword }),
       });
-      if (!response.ok) throw new Error("Invalid password");
+      if (!response.ok) {
+        throw new Error("Login failed");
+      }
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Success!",
-        description: "Logged in as admin",
+        title: "Login Successful",
+        description: "You are now logged in as admin.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
       setPassword("");
+      setShowLogin(false);
+      // Invalidate the admin status query to refetch it on the Home page
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: "Invalid password",
+        title: "Login Failed",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -53,20 +61,23 @@ export default function AdminLogin() {
       const response = await fetch("/api/admin/logout", {
         method: "POST",
       });
-      if (!response.ok) throw new Error("Failed to logout");
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Success!",
-        description: "Logged out successfully",
+        title: "Logout Successful",
+        description: "You are now logged out.",
       });
+      // Invalidate the admin status query to refetch it on the Home page
       queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to logout",
+        title: "Logout Failed",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -74,33 +85,50 @@ export default function AdminLogin() {
 
   if (adminStatus?.isAdmin) {
     return (
-      <Button
-        variant="outline"
-        className="bg-space-surface/80 backdrop-blur-sm text-red-500 hover:text-red-600 hover:bg-red-500/10"
-        onClick={() => logoutMutation.mutate()}
-      >
-        Logout Admin
-      </Button>
+      <div className="flex items-center space-x-2">
+        <span className="text-yellow-400 text-sm font-bold">Admin Mode</span>
+        <Button 
+          onClick={() => logoutMutation.mutate()} 
+          disabled={logoutMutation.isLoading}
+          variant="ghost"
+          className="text-white hover:bg-white/10"
+        >
+          Logout
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="flex items-center space-x-2 bg-space-surface/80 backdrop-blur-sm p-2 rounded-lg">
-      <Input
-        type="password"
-        placeholder="Admin Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="w-40 bg-space-lighter border-gray-600 text-white placeholder-gray-400"
-      />
-      <Button
-        variant="outline"
-        onClick={() => loginMutation.mutate()}
-        disabled={!password}
-        className="bg-space-lighter hover:bg-space-dark text-white"
-      >
-        Login
-      </Button>
+    <div className="flex items-center space-x-2">
+      {showLogin && (
+        <div className="bg-space-surface/90 backdrop-blur-sm p-3 rounded-lg border border-space-lighter flex items-center space-x-2">
+          <Input
+            type="password"
+            placeholder="Admin Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="bg-space-dark border-gray-600 rounded-md px-3 py-1 text-sm text-white placeholder-gray-400 focus:ring-1 focus:ring-portal-blue focus:border-transparent w-40"
+          />
+          <Button 
+            onClick={() => loginMutation.mutate(password)} 
+            disabled={loginMutation.isLoading || password.length === 0}
+            variant="outline"
+            className="bg-space-lighter hover:bg-space-lighter/80 border-space-lighter text-white text-sm"
+          >
+            Login
+          </Button>
+        </div>
+      )}
+      {!showLogin && (
+         <Button 
+           onClick={() => setShowLogin(true)}
+           variant="ghost"
+           className="text-white hover:bg-white/10"
+         >
+           Admin Login
+         </Button>
+      )}
     </div>
   );
 } 
