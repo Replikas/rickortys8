@@ -2,13 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [showLogin, setShowLogin] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Check admin status
   const { data: adminStatus } = useQuery({
@@ -43,8 +42,7 @@ export default function AdminLogin() {
       });
       setPassword("");
       setShowLogin(false);
-      // Invalidate the admin status query to refetch it on the Home page
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
+      // Note: Query invalidation for admin status was removed here
     },
     onError: (error) => {
       toast({
@@ -71,8 +69,7 @@ export default function AdminLogin() {
         title: "Logout Successful",
         description: "You are now logged out.",
       });
-      // Invalidate the admin status query to refetch it on the Home page
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
+      // Note: Query invalidation for admin status was removed here
     },
     onError: (error) => {
       toast({
