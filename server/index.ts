@@ -41,8 +41,10 @@ app.post("/api/admin/login", (req, res) => {
   // Check if the password matches the admin password from environment variable
   if (password === process.env.ADMIN_PASSWORD) {
     req.session.isAdmin = true;
+    log(`Admin login successful - Session ID: ${req.sessionID}`);
     res.json({ message: "Login successful" });
   } else {
+    log(`Admin login failed - Session ID: ${req.sessionID}`);
     res.status(401).json({ message: "Invalid password" });
   }
 });
@@ -56,6 +58,7 @@ app.post("/api/admin/logout", (req, res) => {
 
 // Check admin status endpoint
 app.get("/api/admin/status", (req, res) => {
+  log(`Admin status check - Session ID: ${req.sessionID}, isAdmin: ${!!req.session?.isAdmin}`);
   res.json({ isAdmin: !!req.session?.isAdmin });
 });
 

@@ -24,13 +24,16 @@ function Router() {
       if (!response.ok) throw new Error("Failed to fetch admin status");
       return response.json();
     },
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    staleTime: 0, // Remove stale time to always refetch
+    refetchOnMount: true, // Refetch when component mounts
   });
 
   // Simple protected route wrapper
   const ProtectedRoute = ({ component: Component, ...rest }: ProtectedRouteProps) => {
     if (isLoading) {
-      return null; // Or a loading spinner
+      return <div className="min-h-screen bg-space-dark text-white flex items-center justify-center">
+        <p>Loading...</p>
+      </div>;
     }
     
     if (!adminStatus?.isAdmin) {
