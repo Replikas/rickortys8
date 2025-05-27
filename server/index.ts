@@ -2,10 +2,54 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupPingService } from "./ping";
+import session from "express-session";
+import MemoryStore from "memorystore";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Session configuration
+const MemoryStoreSession = MemoryStore(session);
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "your-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    store: new MemoryStoreSession({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
+// Admin login endpoint
+app.post("/api/admin/login", (req, res) => {
+  const { password } = req.body;
+  
+  // Check if the password matches the admin password from environment variable
+  if (password === process.env.ADMIN_PASSWORD) {
+    req.session.isAdmin = true;
+    res.json({ message: "Login successful" });
+  } else {
+    res.status(401).json({ message: "Invalid password" });
+  }
+});
+
+// Admin logout endpoint
+app.post("/api/admin/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.json({ message: "Logged out successfully" });
+  });
+});
+
+// Check admin status endpoint
+app.get("/api/admin/status", (req, res) => {
+  res.json({ isAdmin: !!req.session?.isAdmin });
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

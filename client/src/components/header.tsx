@@ -1,6 +1,7 @@
 import { Search, Tv } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import bannerImage from "@assets/v43GMpAuUdC6RabdnuVVMN.png";
+import bannerImage from "@/assets/banner.jpg";
+import AdminLogin from "./admin-login";
 
 interface HeaderProps {
   searchQuery: string;
@@ -25,6 +26,9 @@ export default function Header({ searchQuery, onSearchChange }: HeaderProps) {
           <p className="text-lg md:text-xl text-yellow-400 font-bold drop-shadow-2xl" style={{textShadow: '2px 2px 6px rgba(0,0,0,0.9), 0 0 15px rgba(0,0,0,0.8)'}}>
             Season 8 • Streaming Hub
           </p>
+        </div>
+        <div className="absolute top-4 right-4">
+          <AdminLogin />
         </div>
       </div>
 

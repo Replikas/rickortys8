@@ -26,6 +26,16 @@ export default function Home() {
     },
   });
 
+  // Check admin status
+  const { data: adminStatus } = useQuery({
+    queryKey: ["/api/admin/status"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/status");
+      if (!response.ok) throw new Error("Failed to fetch admin status");
+      return response.json();
+    },
+  });
+
   // Filter episodes based on search query
   const filteredEpisodes = useMemo(() => {
     if (!searchQuery) return episodes;
@@ -78,7 +88,7 @@ export default function Home() {
               <EpisodeCard 
                 key={episode.id} 
                 episode={episode} 
-                isAdmin={true} // TODO: Replace with actual admin check
+                isAdmin={adminStatus?.isAdmin}
               />
             ))
           ) : (
@@ -114,6 +124,7 @@ export default function Home() {
                 setShowAddMenu(false);
               }}
               className="bg-portal-blue hover:bg-portal-blue/80 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
+              disabled={!adminStatus?.isAdmin}
             >
               <Tv className="w-4 h-4" />
               <span className="whitespace-nowrap">Add Episode</span>
@@ -124,7 +135,7 @@ export default function Home() {
                 setShowAddMenu(false);
               }}
               className="bg-rick-green hover:bg-rick-green/80 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
-              disabled={episodes.length === 0}
+              disabled={episodes.length === 0 || !adminStatus?.isAdmin}
             >
               <Link className="w-4 h-4" />
               <span className="whitespace-nowrap">Add Link</span>
@@ -136,6 +147,7 @@ export default function Home() {
           onClick={() => setShowAddMenu(!showAddMenu)}
           className="bg-gradient-to-r from-morty-orange to-rick-green hover:from-rick-green hover:to-morty-orange text-white w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
           size="icon"
+          disabled={!adminStatus?.isAdmin}
         >
           <Plus className={`text-xl transition-transform duration-300 ${showAddMenu ? 'rotate-45' : ''}`} />
         </Button>
