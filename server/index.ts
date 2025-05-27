@@ -3,8 +3,6 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupPingService } from "./ping";
 import session from "express-session";
-import pgSession from "connect-pg-simple";
-import { pool } from "./db";
 
 // Extend the session type to include isAdmin
 declare module 'express-session' {
@@ -18,17 +16,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Session configuration
-const PgSession = pgSession(session);
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
-    resave: false,
-    saveUninitialized: false,
-    store: new PgSession({
-      pool,
-      tableName: 'session', // Use a different table name
-      createTableIfMissing: true,
-    }),
+    resave: true,
+    saveUninitialized: true,
     cookie: {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -36,6 +28,13 @@ app.use(
     },
   })
 );
+
+// Add session debugging middleware
+app.use((req, res, next) => {
+  log(`Request to ${req.path} - Session ID: ${req.sessionID}`);
+  log(`Session before request:`, JSON.stringify(req.session));
+  next();
+});
 
 // Admin login endpoint
 app.post("/api/admin/login", (req, res) => {
@@ -45,6 +44,7 @@ app.post("/api/admin/login", (req, res) => {
   if (password === process.env.ADMIN_PASSWORD) {
     req.session.isAdmin = true;
     log(`Admin login successful - Session ID: ${req.sessionID}`);
+    log(`Session after setting isAdmin:`, JSON.stringify(req.session));
     res.json({ message: "Login successful" });
   } else {
     log(`Admin login failed - Session ID: ${req.sessionID}`);
@@ -54,6 +54,8 @@ app.post("/api/admin/login", (req, res) => {
 
 // Admin logout endpoint
 app.post("/api/admin/logout", (req, res) => {
+  log(`Logging out - Session ID: ${req.sessionID}`);
+  log(`Session before logout:`, JSON.stringify(req.session));
   req.session.destroy(() => {
     res.json({ message: "Logged out successfully" });
   });
@@ -61,7 +63,8 @@ app.post("/api/admin/logout", (req, res) => {
 
 // Check admin status endpoint
 app.get("/api/admin/status", (req, res) => {
-  log(`Admin status check - Session ID: ${req.sessionID}, isAdmin: ${!!req.session?.isAdmin}, Session data: ${JSON.stringify(req.session)}`);
+  log(`Admin status check - Session ID: ${req.sessionID}`);
+  log(`Session during status check:`, JSON.stringify(req.session));
   res.json({ isAdmin: !!req.session?.isAdmin });
 });
 

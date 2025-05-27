@@ -20,6 +20,7 @@ export default function AdminLoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ password: adminPassword }),
+        credentials: 'include', // Important: include cookies in the request
       });
       if (!response.ok) {
         console.error('Login failed:', response.status);

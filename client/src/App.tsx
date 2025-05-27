@@ -21,7 +21,9 @@ function Router() {
     queryKey: ["/api/admin/status"],
     queryFn: async () => {
       console.log('Checking admin status...');
-      const response = await fetch("/api/admin/status");
+      const response = await fetch("/api/admin/status", {
+        credentials: 'include', // Important: include cookies in the request
+      });
       if (!response.ok) throw new Error("Failed to fetch admin status");
       const data = await response.json();
       console.log('Admin status response:', data);
