@@ -1,8 +1,15 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertStreamingLinkSchema, insertEpisodeSchema } from "@shared/schema";
 import { z } from "zod";
+
+// Extend Express Request type to include session
+interface RequestWithSession extends Request {
+  session?: {
+    isAdmin?: boolean;
+  };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all episodes with their streaming links
@@ -97,6 +104,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching stats:", error);
       res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  // Delete episode
+  app.delete("/api/episodes/:id", async (req: RequestWithSession, res) => {
+    try {
+      // Check if user is admin
+      if (!req.session?.isAdmin) {
+        return res.status(403).json({ message: "Only admins can delete episodes" });
+      }
+
+      const id = parseInt(req.params.id);
+      const episode = await storage.getEpisode(id);
+      
+      if (!episode) {
+        return res.status(404).json({ message: "Episode not found" });
+      }
+
+      // First delete all streaming links for this episode
+      await storage.deleteStreamingLinksForEpisode(id);
+      // Then delete the episode
+      await storage.deleteEpisode(id);
+      
+      res.status(200).json({ message: "Episode deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting episode:", error);
+      res.status(500).json({ message: "Failed to delete episode" });
     }
   });
 
