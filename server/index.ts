@@ -4,11 +4,85 @@ import { setupVite, serveStatic, log } from "./vite";
 import { setupPingService } from "./ping";
 import session from "express-session";
 import { Redis } from "@upstash/redis";
+import { Store } from "express-session";
 
 // Extend the session type to include isAdmin
 declare module 'express-session' {
   interface SessionData {
     isAdmin?: boolean;
+  }
+}
+
+// Custom Upstash session store
+class UpstashStore extends Store {
+  private redis: Redis;
+
+  constructor(redisClient: Redis) {
+    super();
+    this.redis = redisClient;
+  }
+
+  // Required by express-session, even if not used by a REST client
+  on(event: string, listener: (...args: any[]) => void): this {
+    // This store doesn't emit events like a traditional client
+    // We can potentially log if we receive unexpected events
+    if (event !== 'connect' && event !== 'disconnect') {
+      log(`UpstashStore received unexpected event: ${event}`);
+    }
+    // For the 'disconnect' event, we should call the listener immediately as a REST client is always 'disconnected' in a traditional sense.
+    if (event === 'disconnect') {
+       listener();
+    }
+    return this; // Return this for chaining
+  }
+
+  async get(sid: string, callback: (err: any, session?: session.SessionData | null) => void): Promise<void> {
+    try {
+      const data = await this.redis.get(`sess:${sid}`);
+      if (!data) {
+        return callback(null, null);
+      }
+      callback(null, JSON.parse(data as string));
+    } catch (err) {
+      log('UpstashStore get error:', String(err));
+      callback(err);
+    }
+  }
+
+  async set(sid: string, session: session.SessionData, callback: (err?: any) => void): Promise<void> {
+    try {
+      // Set with expiration - using default session maxAge for now
+      // If cookie.maxAge is set, use that, otherwise use a default (e.g., 24 hours in ms) converted to seconds
+      const maxAgeSeconds = typeof session.cookie.maxAge === 'number' ? Math.floor(session.cookie.maxAge / 1000) : 24 * 60 * 60;
+      await this.redis.set(`sess:${sid}`, JSON.stringify(session), { ex: maxAgeSeconds });
+      callback(null);
+    } catch (err) {
+      log('UpstashStore set error:', String(err));
+      callback(err);
+    }
+  }
+
+  async destroy(sid: string, callback: (err?: any) => void): Promise<void> {
+    try {
+      await this.redis.del(`sess:${sid}`);
+      callback(null);
+    } catch (err) {
+      log('UpstashStore destroy error:', String(err));
+      callback(err);
+    }
+  }
+
+  // Optionally implement touch, all, length, clear
+  // touch method to update the expiration time of a session
+  async touch(sid: string, session: session.SessionData, callback: (err?: any) => void): Promise<void> {
+     try {
+        const maxAgeSeconds = typeof session.cookie.maxAge === 'number' ? Math.floor(session.cookie.maxAge / 1000) : 24 * 60 * 60;
+        await this.redis.expire(`sess:${sid}`, maxAgeSeconds);
+        callback(null);
+     } catch (err) {
+        log('UpstashStore touch error:', String(err));
+        callback(err);
+     }
   }
 }
 
@@ -33,31 +107,7 @@ app.use(
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
-    store: {
-      async get(sid: string) {
-        try {
-          const data = await redis.get(`sess:${sid}`);
-          return data ? JSON.parse(data as string) : null;
-        } catch (err) {
-          log('Session get error:', err);
-          return null;
-        }
-      },
-      async set(sid: string, session: any) {
-        try {
-          await redis.set(`sess:${sid}`, JSON.stringify(session));
-        } catch (err) {
-          log('Session set error:', err);
-        }
-      },
-      async destroy(sid: string) {
-        try {
-          await redis.del(`sess:${sid}`);
-        } catch (err) {
-          log('Session destroy error:', err);
-        }
-      }
-    }
+    store: new UpstashStore(redis), // Use the custom store instance
   })
 );
 
