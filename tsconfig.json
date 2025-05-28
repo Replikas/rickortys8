@@ -13,6 +13,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
+    "rootDir": ".",
+    "allowJs": true,
+    "resolveJsonModule": true,
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./client/src/*"],
