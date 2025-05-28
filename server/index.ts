@@ -1,6 +1,12 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
+import { log } from './vite.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// Database connection (moved from db.ts)
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool } from '@neondatabase/serverless';
+import * as schema from "../shared/schema.js";
+import { DatabaseStorage } from "./storage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,13 +28,6 @@ if (dotenvConfig.error) {
 }
 
 log(`DATABASE_URL after dotenv config: ${process.env.DATABASE_URL}`);
-
-// Database connection (moved from db.ts)
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool } from '@neondatabase/serverless';
-import * as schema from "../shared/schema.js";
-
-import { DatabaseStorage } from "./storage.js";
 export const storage = new DatabaseStorage(); // Import and export the storage instance
 
 const pool = new Pool({
@@ -42,7 +41,7 @@ console.log(`DATABASE_URL inside index.ts after dotenv: ${process.env.DATABASE_U
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
-import { setupVite, serveStatic, log } from "./vite.js";
+import { setupVite, serveStatic } from "./vite.js";
 import { setupPingService } from "./ping.js";
 import { auth } from "express-oauth2-jwt-bearer";
 

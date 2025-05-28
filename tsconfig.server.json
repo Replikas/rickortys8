@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "outDir": "./dist/server",
     "baseUrl": ".",
-    "rootDir": "./server",
+    "rootDir": ".",
     "esModuleInterop": true,
     "allowJs": true,
     "resolveJsonModule": true

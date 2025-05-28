@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "outDir": "./dist/shared",
     "baseUrl": ".",
-    "rootDir": "./shared",
+    "rootDir": ".",
     "esModuleInterop": true,
     "allowJs": true,
     "resolveJsonModule": true
