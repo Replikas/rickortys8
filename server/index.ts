@@ -26,7 +26,7 @@ log(`DATABASE_URL after dotenv config: ${process.env.DATABASE_URL}`);
 // Database connection (moved from db.ts)
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { Pool } from '@neondatabase/serverless';
-import * as schema from "./shared/schema.js";
+import * as schema from "../shared/schema";
 
 import { DatabaseStorage } from "./storage.js";
 export const storage = new DatabaseStorage(); // Import and export the storage instance

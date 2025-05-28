@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx server/bootstrap.ts",
-    "build": "tsc --project tsconfig.server.json && node -e \"require('fs').cpSync('shared', 'dist/shared', { recursive: true })\"",
+    "build": "tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && node -e \"require('fs').cpSync('dist/shared', 'dist/server/shared', { recursive: true })\"",
     "start": "npm run build && node ./dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
