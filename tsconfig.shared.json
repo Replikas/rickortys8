@@ -5,11 +5,11 @@
     "moduleResolution": "NodeNext",
     "outDir": "./dist/shared",
     "baseUrl": ".",
-    "rootDir": ".",
+    "rootDir": "./shared",
     "esModuleInterop": true,
     "allowJs": true,
     "resolveJsonModule": true
   },
   "include": ["shared/**/*"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"]
-} 
+}
