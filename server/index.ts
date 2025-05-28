@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 log(`Current working directory: ${process.cwd()}`);
 log(`Server directory: ${__dirname}`);
 
-const envPath = path.resolve(__dirname, '.env');
+const envPath = path.resolve(__dirname, '../.env');
 
 log(`Attempting to load .env from: ${envPath}`);
 const dotenvConfig = dotenv.config({ path: envPath });
@@ -51,11 +51,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Auth0 configuration
-const checkJwt = auth({
-  audience: process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
-});
+// Auth0 configuration - only enable if environment variables are properly set
+let checkJwt;
+if (process.env.AUTH0_DOMAIN && process.env.AUTH0_AUDIENCE) {
+  checkJwt = auth({
+    audience: process.env.AUTH0_AUDIENCE,
+    issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
+  });
+} else {
+  console.log('Auth0 environment variables not set - running without authentication');
+  checkJwt = (req: Request, res: Response, next: NextFunction) => next();
+}
 
 // Protected route middleware
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
