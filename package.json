@@ -9,7 +9,7 @@
     "build": "npm run clean && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && shx mkdir -p dist/server/shared && shx cp -r dist/shared/* dist/server/shared/",
     "build:client": "cd client && npm install && npm run build",
     "build:server": "npm run clean && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && shx cp dist/server/server/*.js dist/server/ && shx rm -rf dist/server/server && shx mkdir -p dist/server/shared && shx cp -r dist/shared/* dist/server/shared/ && shx sed -i \"s/\\.\\.\\/shared\\/schema\\.js/\\.\\/shared\\/schema\\.js/g\" dist/server/*.js",
-    "start": "node dist/server/index.js",
+    "start": "node ../dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "test": "echo \"Error: no test specified\" && exit 1"
