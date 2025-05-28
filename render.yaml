@@ -3,7 +3,7 @@ services:
     name: rickortys8
     runtime: node
     buildCommand: npm install && npm run build:server && npm run build:client
-    startCommand: node src/dist/server/index.js
+    startCommand: node ../dist/server/index.js
     envVars:
       - key: NODE_ENV
         value: production
