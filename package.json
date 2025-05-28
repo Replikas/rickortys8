@@ -5,10 +5,10 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx server/bootstrap.ts",
-    "clean": "rimraf dist",
-    "build": "npm run clean && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && mkdir -p dist/server/shared && cp -r dist/shared/* dist/server/shared/",
+    "clean": "rm -rf dist",
+    "build": "rm -rf dist && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && mkdir -p dist/server/shared && cp -r dist/shared/* dist/server/shared/",
     "build:client": "cd client && npm install && npm run build",
-    "build:server": "npm run clean && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && mkdir -p dist/server/shared && cp -r dist/shared/* dist/server/shared/",
+    "build:server": "rm -rf dist && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && mkdir -p dist/server/shared && cp -r dist/shared/* dist/server/shared/",
     "start": "node ./dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
