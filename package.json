@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx server/bootstrap.ts",
     "clean": "rimraf dist",
-    "build": "npm run clean && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && mkdir -p dist/server/shared && cp -r dist/shared/* dist/server/shared/",
+    "build": "npm run clean && tsc --project tsconfig.server.json && tsc --project tsconfig.shared.json && shx mkdir -p dist/server/shared && shx cp -r dist/shared/* dist/server/shared/",
     "start": "npm run build && node ./dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
@@ -106,6 +106,7 @@
     "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.30.6",
     "rimraf": "^5.0.5",
+    "shx": "^0.4.0",
     "tsx": "^4.19.1",
     "typescript": "5.6.3"
   },
