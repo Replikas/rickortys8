@@ -4,7 +4,11 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "./dist/server",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "rootDir": ".",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "resolveJsonModule": true
   },
   "include": ["server/**/*", "shared/**/*"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"]
