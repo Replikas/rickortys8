@@ -191,28 +191,36 @@ export default function EpisodeCard({ episode, isAdmin = false, onDelete, onDele
         <p className="text-sm text-gray-300 mb-4">{episode.description}</p>
         <Separator className="bg-space-lighter mb-4" />
         {episode.links && episode.links.length > 0 ? (
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="links">
-              <AccordionTrigger className="text-portal-blue hover:underline-none">Streaming Links ({episode.links.length})</AccordionTrigger>
-              <AccordionContent>
-                <ul className="list-disc list-inside text-gray-300">
-                  {episode.links.map((link) => (
-                    <li key={link.id} className="mb-1 flex items-center">
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm hover:underline flex items-center"
-                      >
-                        {link.sourceName} - {link.quality}
-                        <ExternalLink className="ml-1 h-3 w-3 inline" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-portal-blue mb-2">Streaming Links ({episode.links.length})</h4>
+            <ul className="space-y-2">
+              {episode.links.map((link) => (
+                <li key={link.id} className="flex items-center justify-between bg-space-lighter/50 p-2 rounded">
+                  <button
+                    onClick={() => handleStreamClick(link.url, link.sourceName)}
+                    className="text-sm hover:underline flex items-center text-portal-blue"
+                  >
+                    {link.sourceName} - {link.quality}
+                    <ExternalLink className="ml-1 h-3 w-3 inline" />
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(link.url);
+                      toast({
+                        title: "Link Copied!",
+                        description: "The streaming link has been copied to your clipboard.",
+                      });
+                    }}
+                    className="text-rick-green hover:text-rick-green/80"
+                  >
+                    Show Link
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
           <p className="text-sm text-gray-400">No streaming links available.</p>
         )}
