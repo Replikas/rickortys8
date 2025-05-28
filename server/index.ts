@@ -108,36 +108,37 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Make sure db is initialized before registering routes
-  // The db constant is now exported from this file
-  const server = await registerRoutes(app);
+  try {
+    // Make sure db is initialized before registering routes
+    const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      console.error('Error:', err);
+      res.status(status).json({ message });
+    });
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+      // Start ping service in production
+      setupPingService();
+    }
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-    // Start ping service in production
-    setupPingService();
+    // Use Render's PORT or fallback to 3001
+    const port = parseInt(process.env.PORT || '3001', 10);
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`Server is running on port ${port}`);
+      console.log(`Environment: ${app.get("env")}`);
+      console.log(`Database URL: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
   }
-
-  // Use Render's PORT or fallback to 3001
-  const port = process.env.PORT || 3001;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
 })();
