@@ -95,7 +95,10 @@
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "rimraf": "^5.0.5",
+    "shx": "^0.4.0",
+    "typescript": "5.6.3"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",
@@ -107,10 +110,7 @@
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.30.6",
-    "rimraf": "^5.0.5",
-    "shx": "^0.4.0",
-    "tsx": "^4.19.1",
-    "typescript": "5.6.3"
+    "tsx": "^4.19.1"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
